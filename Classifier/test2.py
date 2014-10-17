@@ -45,9 +45,14 @@ def getFileSuffix(key):
     else:
         return ''
 
-def worker(Opt, FD, Clf, fname, q):
+def worker(arg):
     # Download file from key
 #     print key.name
+    Opt = arg[0]
+    FD = arg[1]
+    Clf = arg[2]
+    fname = arg[3]
+    q = arg[4]
     process_name = mp.current_process().name
     print process_name
     
@@ -102,15 +107,23 @@ p.start()
        
 pool = mp.Pool(processes = 10)
 
-
+fileList = []
 for dirPath, dirNames, fileNames in os.walk(Opt.classifyCorpusPath):
     for f in fileNames:
         print f
         fname, suffix = Common.getFileNameAndSuffix(f)
         if suffix in Opt.validImageFormat:
-            filename = os.path.join(dirPath, f)
-            pool.apply(worker, args =  (Opt, FD, Clf, filename, q,))
+            fileList.append(os.path.join(dirPath, f))
+#             pool.apply(worker, args =  (Opt, FD, Clf, filename, q,))
             
+            
+print fileList
+   
+from itertools import repeat         
+# zip(repeat(Opt), repeat(FD), repeat(Clf), fileList, repeat(q))
+            
+            
+pool.map(worker, zip(repeat(Opt), repeat(FD), repeat(Clf), fileList, repeat(q)))
 
 q.put('kill')
 pool.close()
