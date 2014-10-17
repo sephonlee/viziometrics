@@ -1,149 +1,241 @@
-import MySQLdb
-import json
-import pickle
-class ImageDataManager:
+import time
+import os, errno
+import numpy as np
+import cv2 as cv
+import csv
+
+import boto
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
+from Options import *
+import multiprocessing as mp
+
+
+class cloudImageLoader():
     
-    db = None
-    db_connected = False
-    localDataPath = None
-    classDataID = {}
-    classDataName = {}
+    Opt = None
+    bucket = None
     
-    def __init__(self, localDataPath = None, connectToDB = False, db_info = None):
-        
-        if connectToDB & (db_info is not None):
-            host = db_info['host']
-            db_username = db_info['db_username']
-            db_password = db_info['db_password']
-            db_name = db_info['db_name']
-            self.loginDB(host, db_username, db_password, db_name)
-            self.db_connected = True
-        elif localDataPath is not None:
-            self.localDataPath = localDataPath
-        else:
-            print 'Warning! Don\'t find any data support!'
+    def __init__(self, Opt, keyPath = None, host = None):
+        self.Opt = Opt
+        if keyPath is None:
+            keyPath = self.Opt.keyPath
             
-    # login mysql
-    def loginDB(self, host, db_username, db_password, db_name):
-        self.db = MySQLdb.connect("localhost","sephon","19831122","VizioMatrics" )
+        if host is None:
+            host = self.Opt.host
+        
+        f = open(keyPath, 'r')
+        access_key = f.readline()[0:-1]
+        secret_key = f.readline()
+        
+        conn = S3Connection(access_key, secret_key)
+        self.bucket = conn.get_bucket(host)
+        
+    def getBucketList(self):
+        return self.bucket.list()
     
-    
-    @ staticmethod
-    def extendPath(path, newFileName):
-        if path[-1] in ('/', '\\'):
-            return path + newFileName
+    def isKeyValidImageFormat(self, key):
+        keyname =  key.name.split('.')
+        if len(keyname) == 2:
+            return keyname[1] in self.Opt.validImageFormat, keyname[1]
         else:
-            return path + '/' + newFileName
-    
-    def class_id2class_name(self, class_id):    
-        if len(self.classDataID) == 0:
-            self.loadClassData()
+            return False, ''
+        
+    def keyToValidImage(self, key):
+        
+#         filename, suffix= Common.getFileNameAndSuffix(key.name)
+#         if key.name.split('.')[1] in self.Opt.validImageFormat:
             
-        if class_id <= len(self.classDataID):
-            return self.classDataID[class_id]
-        else:
-            print 'Given class_id not exist, class_id:', self.classDataID.keys()
         
-    def class_name2class_id(self, class_name):
         
-        class_name = class_name.lower()
-        if len(self.classDataName) == 0:
-            self.loadClassData()
+#         print filename
+#         fname = "img.jpg"
+#         fp = open (fname, "w")
+# #         key.get_file(fp)
+#         fp.close
+#         
+#         image = cv.imread(fname)
+        return 
+
+# Class of Image Data
+class ImageLoader():
+    
+    Opt = None
+     
+    def __init__(self, Opt):
+        self.Opt = Opt
+        
+    # Load training image data from local database
+    def loadTrainDataByQuerry(self):
+        return
+    
+    # Load testing image data from local database
+    def loadTestDataByQuerry(self):
+        self.loadTrainDataByQuerry()
+        return
+    
+    
+    # Load testing image data from local classified directories
+    # Directory name = class name
+    def loadTestDataFromLocalClassDir(self, inPath = None, outPath = None):
+        if inPath is None:
+            inPath = self.Opt.testCorpusPath##
+        if outPath is None:
+            outPath = self.Opt.svmModelPath ################################################## need modify
+        return self.loadDataFromLocalClassDir(inPath, outPath, mode = 'test')
+        
+    # Load training image data from local classified directories
+    # Directory name = class name
+    def loadTrainDataFromLocalClassDir(self, inPath = None, outPath = None):
+        if inPath is None:
+            inPath = self.Opt.trainCorpusPath
+        if outPath is None:
+            outPath = self.Opt.modelPath
+        return self.loadDataFromLocalClassDir(inPath, outPath, mode = 'train')
+        
+    def loadDataFromLocalClassDir(self, inPath, outPath, mode = 'unknown'):
+        print "Loading Images from" + inPath
+        startTime =  time.time()
+        
+        # Local classes information
+        allImData = None
+        localClassDirs = [] # Local labeled classe_names
+        localClassIDs = {} # Local labeled class_ids
+        
+        # Local images in classes information
+        imDimsInClass = {}
+        numImageInClass = {}
+        
+        fileNamesInClass = []
+        allLabels = []
+        allClassNames = []
+        
+        ## Image data overview
+        dimHeightSum = 0
+        dimWidthSum = 0
+        NtotalImages = 0
+        maxCatSize = 0
+        
+        # get categories from directory
+
+        for dirName in  os.listdir(inPath):
+            if dirName in self.Opt.classNames:
+                localClassDirs.append(dirName)
+                localClassIDs[dirName] = self.Opt.classInfo[dirName]
+        
+        
+        ####################
+        # Loop to read files
+        for className in localClassDirs:
             
-        try:
-            return self.classDataName[class_name] 
-#             return id
-        except:
-            print 'Given class_name not exist, class_name:', self.classDataName.keys()
+            classPath = os.path.join(inPath, className)
+            fileList = self.getFileNamesFromPath(classPath)
+            imData, imDims, dimSum = self.loadImages(fileList, self.Opt.finalDim)
 
-    
-    def loadClassData(self):
-        # Load from DB
-        if self.db_connected:
-            cursor = self.db.cursor()
+            NImages = len(imDims)
             
-            sql = """SELECT *
-                     FROM Class
-                     """ 
-            cursor.execute(sql)
-            for c in cursor.fetchall():
-                self.classDataID[c[0]] = c[1]
-        # Load from local data
-        elif self.localDataPath is not None: 
-            path = self.extendPath(self.localDataPath, 'class.pkl')
-            with open(path, 'rb') as infile:       
-                self.classDataID = pickle.load(infile)
-        else:
-            print 'No data source found.'
-        self.classDataName = {y:x for x,y in self.classDataID.iteritems()}
-    
-    # Read image and update image_path by image_id
-    @ staticmethod
-    def updateImagePath():
-        return
-    
-    # Read image from categorized directory and update isGroundTruth by image_id
-    @ staticmethod
-    def updateGroundTruthImageByCatDir():
-        return
-    
-    # Update ground-truth class_id by image_id
-    @ staticmethod
-    def updateGroundTruthImageClassByCarDir(image_id, class_id):
-        return
-    
-    # Update ground-truth subclass_id by image_id
-    @ staticmethod
-    def updateGroundTruthSubimageClassByCarDir(image_id, subclass_id):
-        return
-    
-    
-    @staticmethod
-    def updateClfImageClass(image_id, class_id):
-        return
-    
-    # Update ground-truth subclass_id by image_id
-    @staticmethod
-    def updateClfSubimageClass(image_id, class_id):
-        return
-    
-    # File format: paper_id_image_id.{png, jpg,....}
-    @ staticmethod
-    def getIDsFromFilename(filename):
-        filename = filename.split('.')
-        filename = filename[0].split('_')
-        return filename[1], filename[3]
-    
-    
+            # stack all images #
+            if allImData is None:
+                allImData =  imData
+            else:
+                allImData = np.vstack([allImData, imData])
+            #####################
+            
+            ##
+            imDimsInClass[className] = imDims
+            numImageInClass[className] = NImages
+            ##
+            fileNamesInClass += fileList
+            allLabels = np.hstack([allLabels, np.tile(localClassIDs[className], (numImageInClass[className]))])
+            allClassNames = np.hstack([allClassNames, np.tile(className, (numImageInClass[className]))])
+                
+            ## Image data overview
+            NtotalImages += NImages 
+            if NImages > maxCatSize:
+                maxCatSize = NImages
+            dimHeightSum += dimSum[0]
+            dimWidthSum += dimSum[1]
+            meanDim = [dimHeightSum / float(NtotalImages), dimWidthSum / float(NtotalImages)]
 
-if __name__ == '__main__': 
-    
-    print ImageDataManager.getIDsFromFilename('paper_49_image_31.jpg')
-    
-    dataPath = '/Users/sephon/Desktop/Research/VizioMetrics/DB/'
-    db_info = { 'host': 'localhost',
-                'db_username': 'sephon',
-                'db_password': 19831122,
-                'db_name': 'VizioMatrics'}
-    
-#     print db_info
-    IDM = ImageDataManager(localDataPath = dataPath, connectToDB = True, db_info = db_info)
+            print 'Collect', NImages, 'images from', className
 
+        endTime = time.time()
         
+        print 'Total', NtotalImages,'images collected in', endTime-startTime, 'sec'
+        print 'Average image dimension: ', meanDim, '\n'
+         
+        
+        saveContent = zip(fileNamesInClass, allClassNames)
+        csvFileName = mode + '_image_files'
+        header = ['file_path', 'class_name']
+        Common.saveCSV(outPath, csvFileName, saveContent, header)
+
+        # output
+        return allImData, allLabels, allClassNames
     
-        
-        
-    db = MySQLdb.connect("localhost","sephon","19831122","VizioMatrics" )
-    cursor = db.cursor()
-    sql = """SELECT *FROM Class""" 
-#     print cursor.execute(sql)
     
-#     data = cursor.fetchall()
-#     cursor.execute("SELECT * FROM ImageFileSource")
-#     print  cursor.fetchone()
-#     print  cursor.fetchone()
-#     print  cursor.fetchone()
+    @ staticmethod
+    def preImageProcessing(img, finalDim):
+        
+        img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        imDim = img.shape 
+
+        img = cv.resize(img, (finalDim[0], finalDim[1]))
+        img = np.asarray(img)
+        img = np.reshape(img, (1, finalDim[0]* finalDim[1]))
+        
+        return img, imDim
+    
+    
+    # return all file paths from the given directory with given file Type
+    @ staticmethod
+    def loadImages(fileList, finalDim):
+        
+        nx, ny, nz = finalDim;
+        imDims = [];
+
+        # read all images and reshaping
+        imData = np.zeros((len(fileList), nx*ny*nz), )
+
+        count = 0;
+        dimHeightSum = 0
+        dimWidthSum = 0
+        for filename in fileList:
+            
+            img = cv.imread(filename)
+            img, imDim = ImageLoader.preImageProcessing(img, finalDim)
+            
+            dimHeightSum += imDim[0]
+            dimWidthSum += imDim[1]
+            imDims.append(imDim[:2])
+            dimSum = [dimHeightSum, dimWidthSum]
+            
+            imData[count, :] = img
+            count += 1
+            dimSum = [dimHeightSum, dimWidthSum]  
+
+        return imData, imDims, dimSum
+         
+    # Get all valid filenames from the given path
+    def getFileNamesFromPath(self, path):
+
+        fileList = []
+        num = 0;
+        for dirPath, dirNames, fileNames in os.walk(path):   
+            for f in fileNames:
+                extension = f.split('.')[1]
+                if extension in self.Opt.validImageFormat:
+                    fileList.append(os.path.join(dirPath, f))
+                
+        return fileList
+        
+if __name__ == '__main__':   
 
 
-        
-        
+    Opt = Opt(isTrain = True)
+    modelPath = Opt.modelPath
+    Opt.saveSetting(modelPath)
+    
+    ImgLoader = ImageLoader(Opt)
+    allImData, allLabels, allCatNames = ImgLoader.loadTrainDataFromLocalClassDir(Opt.trainCorpusPath, modelPath)
