@@ -92,11 +92,11 @@ class DictionaryExtractor:
             c = random.randint(0, ny - rf)
             maxTry += 1
             index = i % Ndata # index will repeat 0, 1, 2, 3...len(imData)
-            patch = np.reshape(allImData[index, :],(nx, ny, nc))
+            patch = np.reshape(allImData[index, :],(nx, ny, nc), 'F')
             patch = patch[r:r+rf, c:c+rf, :]
             
             if np.var(patch) > self.Opt.MIN_PATCH_VAR:
-                A[i,:] = np.reshape(patch, (rf * rf * nc))
+                A[i,:] = np.reshape(patch, (rf * rf * nc), 'F')
                 L[i] = allLabels[index]
                 i += 1
             
@@ -143,7 +143,7 @@ class DictionaryExtractor:
         for i in range(self.Opt.Ncentroids):
             r = np.floor((i) / vizMatCols)
             c = i % vizMatCols
-            centr = np.reshape(C[i,:], (H, W, NChannel))
+            centr = np.reshape(C[i,:], (H, W, NChannel), 'F')
             centr = centr.astype('uint8')
             
             if NChannel > 1:
@@ -173,7 +173,9 @@ class DictionaryExtractor:
                  Ncentroids = self.Opt.Ncentroids,
                  Mean = self.M,
                  Patch = self.P,
-                 centroids = self.centroids
+                 centroids = self.centroids,
+                 FSMean = 'unavailable',
+                 FSSd = 'unavailable'
                  )
          
         print 'Dictionary saved in', path, '\n'

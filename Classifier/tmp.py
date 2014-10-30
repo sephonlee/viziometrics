@@ -1,465 +1,29 @@
-import os, errno
-import numpy as np
-import cv2 as cv
-import random 
-import time
-import datetime
+# Viz Classifier
+from Dictionary import *
 from Options import *
-from matplotlib import pyplot as plt
-from os.path import *
-from sklearn.cluster import KMeans, MiniBatchKMeans
-import sklearn
-import json
-import csv
-import cPickle as pickle
+from DataManager import *
+from MultiProcessingFunctions import *
+
+# SVM Classifier
+from sklearn.externals import joblib
 from sklearn import svm
 from sklearn import cross_validation
 from sklearn import grid_search
 from sklearn import metrics
-# from sklearn import externals
-from sklearn.externals import joblib
-# from sklearn.learning_curve import learning_curve
+# from cStringIO import StringIO
+import csv
+# from PIL import Image
+
+import multiprocessing as mp
 
 
-# Class of Image Data
-class DataSet():
-    
-    def __init__(self, opt):
-        self.finalDim = opt.finalDim
-#         self.Ntrain = opt.Ntrain
-#         self.Ntest = opt.Ntest
-        self.validImageFormat = opt.validImageFormat   
-        
-        self.classNames = opt.classNames
-        self.classIDs = opt.classIDs
-        self.classInfo = dict(zip(self.classNames, self.classIDs))
-        
-        
-    # Load training image data from local database
-    def loadTrainDataByQuerry(self):
-        return
-    
-    # Load testing image data from local database
-    def loadTestDataByQuerry(self):
-        self.loadTrainDataByQuerry()
-        return
-    
-    def LoadUnLabeledDataFromDisk(self, path):
-        print "Loading Images from" + path
-        
-        
-        # read all images
-        index = 0;
-        dimHeightSum = 0
-        dimWidthSum = 0
-        startTime =  time.time()
-        
-        imData, imDims, fileList, dimSum = self.__loadImages(path)
-        NImages = len(imDims)
-        print NImages
-     
-        return
-    
-    # Load testing image data from local classified directories
-    # Directory name = class name
-    def LoadTestDataFromCatDir(self, inPath, outPath):
-        return self.loadDataFromCatDir(inPath, outPath, type = 'test')
-        
-        
-    # Load training image data from local classified directories
-    # Directory name = class name
-    def loadTrainDataFromCatDir_(self, inPath, outPath):
-        return self.loadDataFromCatDir(inPath, outPath, type = 'train')
-        
-    def loadDataFromCatDir(self, inPath, outPath, type = 'unknown'):
-        print "Loading Images from" + inPath
-        
-        # temp variables
-        index = 0;
-        startTime =  time.time()
-        
-        # containers
-        allImData = None
-        catDirs = []
-        catIDs = {}
-        imDimsInCat = []
-        fileNamesInCat = []
-        numImageInCat = {}
-        allLabels = []
-        allCatNames = []
-        
-        # single parameters
-        dimHeightSum = 0
-        dimWidthSum = 0
-        NtotalImages = 0
-        maxCatSize = 0
-        
-        
-        # get categories from directory
-
-        for dirName in  os.listdir(inPath):
-            if dirName in self.classNames:
-                catDirs.append(dirName)
-                catIDs[dirName] = self.classInfo[dirName]
-        
-        NCategories = len(catDirs)
-        
-        ####################
-        # Loop to read files
-        for catName in catDirs:
-            catPath = os.path.join(inPath, catName)
-            fileList = self.getFileNamesFromPath(catPath)
-            imData, imDims, dimSum = self.loadImages(fileList)
-            NImages = len(imDims)
-            
-            # stack all images #
-            if not index:
-                allImData =  imData
-            else:
-                allImData = np.vstack([allImData, imData])
-            index += 1
-            #####################
-            
-            # fill containers
-            imDimsInCat.append(imDims)
-            fileNamesInCat += fileList
-            numImageInCat[catName] = NImages
-            allLabels = np.hstack([allLabels, np.tile(catIDs[catName], (numImageInCat[catName]))])
-            allCatNames = np.hstack([allCatNames, np.tile(catName, (numImageInCat[catName]))])
-                
-            # fill single parameters
-            NtotalImages += NImages 
-            if NImages > maxCatSize:
-                maxCatSize = NImages
-            dimHeightSum += dimSum[0]
-            dimWidthSum += dimSum[1]
-            meanDim = [dimHeightSum / float(NtotalImages), dimWidthSum / float(NtotalImages)]
-
-            print 'Collect', NImages, 'images from', catName
-
-        endTime = time.time()
-        
-        print 'Total', NtotalImages,'images collected in', endTime-startTime, 'sec'
-        print 'Average image dimension: ', meanDim, '\n'
-         
-        # Save Info
-#         dirName = 'nClass_%d_' % len(self.classNames)
-#         dirName = dirName + datetime.datetime.now().strftime("%Y-%m-%d")
-#         outPath = Common.makeDir(outPath, dirName) 
-         
-        saveContent = zip(fileNamesInCat, allCatNames, allLabels)
-        csvFileName = type + '_image_files'
-        self.__saveCSV(outPath, csvFileName, ['file_path', 'class_name', 'class_id'], saveContent)
-    
-        # output
-        return allImData, allLabels, allCatNames
-    
-    
-    
-    @ staticmethod
-    def __saveCSV(path, filename, header, content):
-        
-        print 'Saving image infomation...'
-        filePath = os.path.join(path, filename) + '.csv'
-        with open(filePath, 'wb') as outcsv:
-            writer = csv.writer(outcsv, dialect='excel')
-            writer.writerow(header)
-            for c in content:
-                writer.writerow(c)
-                
-        print filename, 'were saved in', filePath, '\n'
-          
-    
-    # return all file paths from the given directory with given file Type
-    def loadImages(self, fileList):
-        
-        nx, ny, nz = self.finalDim;
-        imDims = [];
-
-        # read all images and reshaping
-        imData = np.zeros((len(fileList), nx*ny*nz), )
-
-        count = 0;
-        dimHeightSum = 0
-        dimWidthSum = 0
-        for filename in fileList:
-            img = cv.imread(filename)
-            img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-            
-            imDim = img.shape 
-            dimHeightSum += imDim[0]
-            dimWidthSum += imDim[1]
-            
-            imDims.append(imDim[:2])
-            img = cv.resize(img, (self.finalDim[0], self.finalDim[1]))
-            img = np.asarray(img)
-#             print img.shape
-            img = np.reshape(img, (1, self.finalDim[0]* self.finalDim[1]))
-#             print img.shape
-            imData[count, :] = img
-            count += 1;
-            
-            dimSum = [dimHeightSum, dimWidthSum]
-               
-        return imData, imDims, dimSum
-         
-    def getFileNamesFromPath(self, path):
-#         print "Get file names from ", path
-        fileList = []
-#         fileType = "." + fileType
-        num = 0;
-        for dirPath, dirNames, fileNames in os.walk(path):   
-            for f in fileNames:
-                extension = f.split('.')[1]
-                if extension in self.validImageFormat:
-                    fileList.append(os.path.join(dirPath, f))
-                    num += 1
-                
-#         print num, "files were found"
-        return fileList
-        
-    
-    
-# Class of Patch    
-class PatchSet():
-    
-    # Parameters
-    N = 50000;                  # Number of patches
-    Ncentroids = 200;           # Number of centroids
-    rfSize = 6;                 # Receptor Field Size (i.e. Patch Size)
-    kmeansIterations = 100      # Iterations for kmeans centroid computation
-    whitening = True            # Whether to use whitening
-    finalDim = [121, 121, 1]    # Image Dimensions
-    normContrast = True         # Whether to normalize patches for contrast
-    minibatch = False           # Use batch to train SVM
-    MIN_PATCH_VAR = 38/255      # Minimum Patch Variance for accepting as potential centroid (empirically set to about 25% quartile of var)
-    
-    # Data
-    patches = None              # [N X rfSize^2] Patch Data Matrix
-    patchLabels = None          # [N X 1] Vector assigning category indices to each patch
-    M = None                    # Patch Mean Matrix
-    P = None                    # Patch Alignment Matrix (Right-Multiplies for whitening)
-    centroids = None            # Patch Centroids (computed through k-means clustering)
-    centroidFrequency = None    # Centroid Occurence Frequencies
-    
-    def __init__(self, opt, allImData, allLabels):
-        
-        # Update parameters
-        self.N = opt.Npatches;
-        self.Ncentroids = opt.Ncentroids;
-        self.rfSize = opt.rfSize;
-        self.kmeansIterations = opt.kmeansIterations;
-        self.whitening = opt.whitening;
-        self.finalDim = opt.finalDim;
-        self.minibatch = opt.minibatch
-        self.classNames = opt.classNames
-        self.MIN_PATCH_VAR = opt.MIN_PATCH_VAR
-        
-        # Data
-        self.patches = None
-        self.patchLabels = None
-        self.M = None
-        self.P = None
-        self.centroids = None
-        self.centroidFrequency = None
-        self.extractPatch(allImData, allLabels)
-
-    # Extract Random Patches from Data (if labels provided, save patch label as well)
-    def extractPatch(self, allImData, allLabels):
-        
-        print 'Extracting random patches from data...'
-        
-        Ndata = allImData.shape[0]
-        nx = self.finalDim[0]
-        ny = self.finalDim[1]
-        nc = self.finalDim[2]
-        rf = self.rfSize;
-
-        A = np.zeros((self.N, rf * rf * nc))
-        A = np.asmatrix(A)
-        L = np.ones((self.N, 1))
-        L = np.asmatrix(L)
-        
-        startTime =  time.time()
-        i = 0
-        trials = 0
-        maxTry = 0
-        
-        
-        
-        while i < self.N:
-            if trials % 10000 == 0:
-                print i, '/', self.N,  'patches accepted.'
-                
-            r = random.randint(0, nx - rf)
-            c = random.randint(0, ny - rf)
-            maxTry += 1
-            index = i % Ndata # index will repeat 0, 1, 2, 3...len(imData)
-            patch = np.reshape(allImData[index, :],(nx, ny, nc))
-            patch = patch[r:r+rf, c:c+rf, :]
-            
-            if np.var(patch) > self.MIN_PATCH_VAR:
-                A[i,:] = np.reshape(patch, (rf * rf * nc))
-                L[i] = allLabels[index]
-                i += 1
-            
-            trials += 1
-            
-        self.patches = A
-        self.patchLabels = L
-        endTime =  time.time()
-        
-        print self.N, 'patches extracted in', endTime - startTime, '\n'
-        
-
-    # K-means for Centroid Computation (uses VL_feat subroutine)
-    def kmeansCentroids(self):
-        normPathces, self.M, self.P = PatchSet.normalizeAndWhiten(self.patches);
-        self.centroids, self.centroidFrequency = PatchSet.kmeansVL(normPathces, self.Ncentroids, self.minibatch)
-        
-    # show centroids
-    def showCentroids(self):
-        
-        if self.centroids is None:
-            print 'Centroids have not been computed.'
-        
-#         highlight = mod
-        
-        H = self.rfSize
-        W = H
-        
-        NChannel = self.centroids.shape[1] / (H*W)
-        
-        vizMatCols = round(np.sqrt(self.Ncentroids))
-        vizMatRows = np.ceil(self.Ncentroids / vizMatCols)
-        
-        C = PatchSet.invertWhiteningAndNormalization(self.centroids, self.M, self.P)
-        
-        C = (C * 40) + 190 # Approximate contrast denormalization for visibility (empirical values for mean and sqvar)
-        C[C < 0] = 0
-        C[C > 255] = 255
-        
-        if NChannel > 1:
-            image = np.ones((vizMatRows*(H+1), vizMatCols*(W+1), NChannel), dtype = 'uint8')* 100
-        else:
-            image = np.ones((vizMatRows*(H+1), vizMatCols*(W+1)), dtype = 'uint8')* 100
-        
-        for i in range(self.Ncentroids):
-            r = np.floor((i) / vizMatCols)
-            c = i % vizMatCols
-            centr = np.reshape(C[i,:], (H, W, NChannel))
-            centr = centr.astype('uint8')
-            
-            if NChannel > 1:
-                image[(r*(H+1)):((r+1)*(H+1))-1, (c*(W+1)):((c+1)*(W+1))-1, :] = centr
-            else:
-                image[(r*(H+1)):((r+1)*(H+1))-1, (c*(W+1)):((c+1)*(W+1))-1] = centr
-        
-        
-        if NChannel == 3:
-            b,g,r = cv.split(image)       # get b,g,r
-            rgb_img = cv.merge([r,g,b]) 
-            plt.imshow(rgb_img)
-        else:
-            plt.imshow(image, cmap = 'gray')
-            
-        plt.xticks([]), plt.yticks([])   # to hide tick values on X and Y axis
-        plt.show()
-        
-        
-    def saveDictionaryToFile(self, path):
-        
-        print 'Saving dictionary...'   
-        filePath = os.path.join(path, 'dictionaryModel')
-        np.savez(filePath,
-                 rfSize = self.rfSize,
-                 finalDim = self.finalDim,
-                 Mean = self.M,
-                 Patch = self.P,
-                 whitening = self.whitening,
-                 centroids = self.centroids,
-                 Ncentroids = self.Ncentroids
-                 )
-         
-        print 'Dictionary saved in', path, '\n'
-        return path
-         
-        
-    @staticmethod
-    def makeDir(dst, dirName):
-
-        path = os.path.join(dst, dirName)        
-        try:
-            os.makedirs(path)
-            print "Create new directory " + path
-            return path    
-        except OSError as exc: # Python >2.5
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                print  path + ' is existed.'
-                pass
-            else: raise
-            return path
-            
-        
-    @staticmethod
-    # Normalize and whiten the patchset
-    def normalizeAndWhiten(A):
-                
-        pM = np.mean(A, axis=1)
-        pSqVar = np.sqrt(A.var(axis=1) + 10)
-        pSqVar = pSqVar.astype('float64') 
-        A = np.divide((A - pM), pSqVar)
-        
-        # whiten
-        C = np.cov(A, rowvar = False)
-        M = np.mean(A, axis = 0)
-        D,V = np.linalg.eig(C)
-        P = np.dot(np.dot(V, np.diag(np.sqrt(1/(D + 0.1)))), V.T)
-        A = np.dot(A - M, P)
-        
-        return A, M, P
-        
-    @staticmethod
-    def invertWhiteningAndNormalization(A, M, P):
-        A = np.dot(A, np.linalg.inv(P)) + M
-        return A
-        
-    @staticmethod
-    def kmeansVL(X, k, minibatch):
-        
-        # choose k-mean algorithm
-        if minibatch:
-            km = MiniBatchKMeans(n_clusters = k, init='k-means++', n_init=10, init_size=1000, batch_size = 1000, verbose = 0)
-        else:
-#             km = KMeans(n_clusters = k, init='k-means++', max_iter = 100, n_init=10, verbose = 0)
-            km = KMeans(n_clusters = k, n_init = 10, max_iter = 50, init = 'random')
-        print("Clustering sparse data with %s" % km)
-        
-        # start training
-        startTime = time.time()
-        km.fit(X)
-        endTime = time.time()
-        
-        labels = km.labels_
-        centoirds = km.cluster_centers_
-        
-        # manipulate order
-        N,bins = np.histogram(labels, np.asarray(range(0, k+1)))
-        descOrderSort = np.argsort(N)[::-1][:k]
-        centroids = centoirds[descOrderSort]
-        cenFreq = N[descOrderSort] / float(np.sum(N))
-        
-        print 'Clustering completed in', endTime-startTime, 'sec\n' 
-        return centroids, cenFreq
-        
-        
+# This class needs a given path to dictionary
 class FeatureDescriptor():
-    
     
     def __init__(self, dicPath):
         
         try:
-            
+            self.dicPath = dicPath
             dicPath = os.path.join(dicPath, 'dictionaryModel.npz')
             dictionary = np.load(dicPath)
             print 'Dictionary loaded from', dicPath
@@ -470,10 +34,26 @@ class FeatureDescriptor():
             self.whitening = dictionary['whitening']
             self.centroids = dictionary['centroids']
             self.Ncentroids = dictionary['Ncentroids']
-
+            self.FSMean = dictionary['FSMean']
+            self.FSSd = dictionary['FSSd']
+            
+            if self.FSMean == 'unavailable':
+                print 'Feature Descriptor is not available'
+                self.unTrained = True
+            else:
+                self.unTrained = False
+            
         except:
             print 'Unable to load dictionary'
         
+    @ staticmethod
+    def getFeatureNames(Ncentroids):
+            
+        featureNames = []
+        for i in range(1, Ncentroids+1):
+            name = 'centroids_' + str(i)
+            featureNames.append(name)
+        return np.asmatrix(featureNames).T
     
     @ staticmethod 
     def im2col(Im, block, style='sliding'):
@@ -512,95 +92,171 @@ class FeatureDescriptor():
             Q = np.vstack((Q, FeatureDescriptor.subdivPooling(X[split:nx, split:ny, :], l-1)))
  
         return Q
-            
-    def extractFeatures (self, X, dicPath, subdivLevels = 1):
+    
+    def extractSingleImageFeatures (self, X, subdivLevels = 1):
         
-        print 'Extracting feature vectors using centroid PatchSet...'
-        startTime = time.time()
-        
-        Nimages = X.shape[0]
-        
-        cc = np.sum(np.power(self.centroids,2), axis = 1).T  
-        sz = self.finalDim[0] * self.finalDim[1]
-
-        XC = np.zeros((Nimages, (4**subdivLevels)*self.Ncentroids))
-
-        for i in range(0, Nimages):
-            
-            if np.mod(i, 100) == 0:
-                print 'Extracting features:', i, '/', Nimages
-            
-#             for i in range(0, X.shape[0]):
-
-            ps = FeatureDescriptor.im2col(np.reshape(X[i,0:sz], self.finalDim[0:2]), (self.rf, self.rf))  
+        if not self.unTrained:
+            Nimages = 1
+    
+            cc = np.asmatrix(np.sum(np.power(self.centroids,2), axis = 1).T)
+            sz = self.finalDim[0] * self.finalDim[1]
+    
+            XC = np.zeros((Nimages, (4**subdivLevels)*self.Ncentroids))
+    
+            ps = FeatureDescriptor.im2col(np.reshape(X[0,0:sz], self.finalDim[0:2], 'F'), (self.rf, self.rf))
             ps = np.divide(ps - np.mean(ps, axis = 1), np.sqrt(np.var(ps, axis = 1) +1))
-#                 
+    
             if self.whitening:
                 ps = np.dot((ps - self.M), self.P)
-                    
+                
             xx = np.sum(np.power(ps, 2), axis = 1)
             xc = np.dot(ps, self.centroids.T)
             z = np.sqrt(cc + xx - 2*xc)
-                
+    
             v = np.min(z, axis = 1)
             inds = np.argmin(z, axis = 1)#
             mu = np.mean(z, axis = 1)
             ps = mu - z
             ps[ps < 0] = 0
-                
+    
             off = np.asmatrix(range(0, (z.shape[0])*self.Ncentroids, self.Ncentroids))
             ps = np.zeros((ps.shape[0]*ps.shape[1],1))
             ps[off.T + inds] = 1
-            ps = np.reshape(ps, (z.shape[0],z.shape[1]))#
+            ps = np.reshape(ps, (z.shape[1],z.shape[0]), 'F').T#
+    
+                    
+            prows = self.finalDim[0] - self.rf + 1
+            pcols = self.finalDim[1]- self.rf + 1
+            ps = np.reshape(ps, (prows, pcols, self.Ncentroids), 'F')
+                    
+            XC[0, :] = FeatureDescriptor.subdivPooling(ps, subdivLevels).T
+        
+            XCs = np.divide(XC - self.FSMean, self.FSSd)
+            return XCs
+        else:
+            print 'FSMean and FSSd are not available, please trained model first'
+        
+
+    
+    def extractFeatures (self, X, subdivLevels = 1):
+        
+        print 'Extracting feature vectors using centroid PatchSet...'
+        startTime = time.time()
+        
+        Nimages = X.shape[0]
+
+        cc = np.asmatrix(np.sum(np.power(self.centroids,2), axis = 1).T)
+        sz = self.finalDim[0] * self.finalDim[1]
+
+        XC = np.zeros((Nimages, (4**subdivLevels)*self.Ncentroids))
+        
+        
+        for i in range(0, Nimages):
+            
+            if np.mod(i, 100) == 0:
+                print 'Extracting features:', i, '/', Nimages
+
+            ps = FeatureDescriptor.im2col(np.reshape(X[i,0:sz], self.finalDim[0:2], 'F'), (self.rf, self.rf))
+            ps = np.divide(ps - np.mean(ps, axis = 1), np.sqrt(np.var(ps, axis = 1) +1))
+            if self.whitening:
+                ps = np.dot((ps - self.M), self.P)
+
+            xx = np.sum(np.power(ps, 2), axis = 1)
+            xc = np.dot(ps, self.centroids.T)
+            z = np.sqrt(cc + xx - 2*xc)
+
+            v = np.min(z, axis = 1)
+            inds = np.argmin(z, axis = 1)#
+            mu = np.mean(z, axis = 1)
+            ps = mu - z
+            ps[ps < 0] = 0
+#             print 'there'
+            off = np.asmatrix(range(0, (z.shape[0])*self.Ncentroids, self.Ncentroids))
+            ps = np.zeros((ps.shape[0]*ps.shape[1],1))
+            ps[off.T + inds] = 1
+            ps = np.reshape(ps, (z.shape[1],z.shape[0]), 'F').T#
+
                 
             prows = self.finalDim[0] - self.rf + 1
             pcols = self.finalDim[1]- self.rf + 1
-            ps = np.reshape(ps, (prows, pcols, self.Ncentroids))
+            ps = np.reshape(ps, (prows, pcols, self.Ncentroids), 'F')
                 
             XC[i, :] = FeatureDescriptor.subdivPooling(ps, subdivLevels).T
-                
+            
+        print 'Extracting features:', i+1, '/', Nimages    
         endTime = time.time()
         print X.shape[0], 'feature vectors computed in', endTime-startTime, 'sec\n'
+        
+        if self.unTrained:
+            print 'Updated dictionary....'
+            self.FSMean = np.mean(XC, axis = 0)
+            self.FSSd = np.sqrt(np.var(XC, axis = 0) + 0.01)
+            self.saveDictionaryToFile() 
+        else:
+            print 'Normalized by trained features'
             
-        mean = np.mean(XC, axis = 0)
-        sd = np.sqrt(np.var(XC, axis = 0) + 0.01)
-        XCs = np.divide(XC - mean, sd)
-#       XCs = np.hstack([XCs, np.ones((XCs.shape[0],1))])
+        XCs = np.divide(XC - self.FSMean, self.FSSd)
             
         return XCs
-        
-    @ staticmethod
-    def getFeatureNames(Ncentroids):
-            
-        featureNames = []
-        for i in range(1, Ncentroids+1):
-            name = 'centroids_' + str(i)
-            featureNames.append(name)
-        return np.asmatrix(featureNames).T
-            
-class Classifier:
+    
+    def saveDictionaryToFile(self):
+        print 'Saving dictionary...'   
+        filePath = os.path.join(self.dicPath, 'dictionaryModel')
+        np.savez(filePath,
+                 rfSize = self.rf,
+                 finalDim = self.finalDim,
+                 whitening = self.whitening,
+                 Ncentroids = self.Ncentroids,
+                 Mean = self.M,
+                 Patch = self.P,
+                 centroids = self.centroids,
+                 FSMean = self.FSMean,
+                 FSSd = self.FSSd
+                 )
+         
+        print 'Dictionary Updated in', self.dicPath, '\n'
+        return self.dicPath
+
+class SVMClassifier:
     
     clssifier = None
     modelTrained = False
+    modelOptimized = False
+    Opt = None
     
-    
-    def __init__(self, clfPath = None):
-                
-        if clfPath is not None:
+    def __init__(self, Opt, isTrain = None, clfPath = None):
+        
+        self.Opt = Opt
+        if isTrain is None:
+            isTrain = Opt.isTrain
+        
+        if isTrain is False:
+            if clfPath is None:
+                clfPath = Opt.svmModelPath
             try:     
-#                 clfiPath = os.path.join(clfPath, 'SVMModelInfo.npz')
                 clfPath = os.path.join(clfPath, 'SVMModel.pkl')
                 print 'Load classifier from', clfPath
-#                 clf = np.load(clfiPath)
-                self.classifier = joblib.load(clfPath) 
+                self.classifier = joblib.load(clfPath)
                 self.modelTrained = True
                 
-                print 'Classifier loaded.'
+                print 'SVM Classifier loaded.'
             except:
                 print 'Unable to read the trained model'
+                
+        else:
+            if Opt.isTrain:
+                print 'Untrained SVM created.'
+            else:
+                print 'Options is not in train mode'
 
+    def loadSVNModel(self, modelPath):
+        return 
         
-    def saveSVMModel(self, path):
+    
+    def saveSVMModel(self, path = None):
+        
+        if path is None:
+            path = self.Opt.modelPath
         
         if self.modelTrained:
             print 'Saving SVM model...'
@@ -640,12 +296,15 @@ class Classifier:
         print metrics.classification_report(y_true, y_pred)
         
         
-    def __evaluateCVModel(self, X_test, y_test, showIterationResult = False):
+    def __evaluateCVModel(self, X_train, y_train, X_test, y_test, showIterationResult = False):
         
-        if self.modelTrained:
+        if self.modelOptimized:
             print("Best parameters set found on development set:")
-            print(self.classifier.best_estimator_)
-            print 'Cross validation accuracy:', self.classifier.score(X_test, y_test)
+            print self.classifier.best_estimator_, '\n'
+    
+            scores =  cross_validation.cross_val_score(self.classifier.best_estimator_, X_train, y_train, cv=10)
+            print("10-Fold cross-validation accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+            print 'Holdout testing data accuracy:', self.classifier.score(X_test, y_test), '\n'
         
             if showIterationResult:
                 print("Grid scores on development set:")
@@ -671,143 +330,258 @@ class Classifier:
         X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.25, random_state=0)
         
         # Choose estimator
-        self.estimator = svm.SVC(kernel = 'linear', probability = True)
+#         self.estimator = svm.SVC(kernel = 'linear', probability = True)
+        self.estimator = svm.SVC(probability = True)
         
         # Choose cross-validation iterator
         cv = cross_validation.ShuffleSplit(X_train.shape[0], n_iter=10, test_size=0.25, random_state=0)
         
+        
         # Tune the hyperparameters
         gammas = np.logspace(-6, -1, 10)
-        
-        tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
-        
-#         self.classifier = grid_search.GridSearchCV(estimator=self.estimator, cv=cv, param_grid=tuned_parameters)     
         self.classifier = grid_search.GridSearchCV(estimator=self.estimator, cv=cv, param_grid=dict(gamma=gammas))
         
-        # Train the model with optimized params by the training set
+#         tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
+#         self.classifier = grid_search.GridSearchCV(estimator=self.estimator, cv=cv, param_grid=tuned_parameters)     
+        
+        
+        # Train the optimized model with the split training set
         self.classifier.fit(X_train, y_train)
-        self.modelTrained = True
+        self.modelOptimized = True
+        
         # Evaluate 
-        self.__evaluateCVModel(X_test, y_test)
+        self.__evaluateCVModel(X_train, y_train, X_test, y_test)
          
-         
-        # Train final model on the full dataset for future use
+        # Train final model with the full training set
+        print 'Train final model with the full training set...'
         self.classifier.fit(X, y)
+        self.modelTrained = True
         print 'Tuned Model: Full training data accuracy:', self.classifier.score(X, y)
     
         endTime = time.time()
-        print 'Complete training model in ',  endTime - startTime
-          
+        print 'Complete training model in ',  endTime - startTime, 'sec\n'
+
+
+
+#########################################
+class VizClassifier():
+   
+    Opt = None
+    FeatureDescriptor = None
+    Classifier = None
+    
+    
+#     nImageAll = 0
+   
+    def loadSVMClassifier(self):
+        
+        self.FeatureDescriptor = FeatureDescriptor(self.Opt.dicPath) 
+        self.Classifier = SVMClassifier(self.Opt, clfPath = self.Opt.svmModelPath)
+        print 'SVM Classifier ready. \n'
         
         
-if __name__ == '__main__':   
-
+    def loadCNNlassifier(self):
+        print 'CNN Classifier is not implemented. \n'
         
-    
-#     corpusPath = "/Users/sephon/Desktop/Research/ReVision/corpus/VizSet_pm_ee_cat014_sub"
-#     workshopPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model"
-#
-    opt = Opt()
-    modelPath = opt.modelPath
-    opt.saveSetting(modelPath)
-    
-    DS = DataSet(opt)
-    allImData, allLabels, allCatNames = DS.loadTrainDataFromCatDir_(opt.trainCorpusPath, modelPath)
+   
+    def __init__(self, Opt, clf = 'SVM'):
+        if Opt.isClassify:
+            self.Opt = Opt
+            if clf == 'SVM':
+                self.loadSVMClassifier()
+            elif clf == 'CNN':
+                self.loadCNNClassifier()
+            else:
+                print clf, 'classifier is not valid'
+        else:
+            print 'Please change Options to classify mode (isClassify = True)'
+        
+        
+    def classifyCouldImages(self, keyPath = None, host = None):
+        
+        if self.Classifier is not None:      
+            try:
+                cImageLoader = CloudImageLoader(self.Opt, keyPath = keyPath, host = host)
+                bucketList = cImageLoader.getBucketList()
+            except:
+                print 'Unable to connect cloud server'
+            
+            print 'Start classifying images on cloud server...'
+            startTime = time.time()
+            nImageAll = 0
+            header = ['file_path', 'class_name', 'probability']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'class_result'
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            
+            for key in bucketList:
+                isValidImage, suffix = cImageLoader.isKeyValidImageFormat(key)
+                if isValidImage:
+                    
+                    # Load Images
+                    try:
+                        img =  CloudImageLoader.keyToValidImage(key)
+                    except:
+                        img = CloudImageLoader.keyToValidImageOnDisk(key, 'tmp')
+                        
+                    imData, imDim = ImageLoader.preImageProcessing(img, self.Opt.finalDim)
+                    
+                    # Extracting Features
+                    X = self.FeatureDescriptor.extractSingleImageFeatures(imData, 1)
+                    # Classify
+                    y_pred, y_proba = self.Classifier.predict(X)
+                          
+                    result = zip([key.name], y_pred, y_proba)
+                    Common.saveCSV(csvSavingPath, csvFilename, result, mode = 'ab', consoleOut = False)
+                    nImageAll += 1 
+                    if np.mod(nImageAll, 100) == 0:
+                        print '%d images have been classified' % nImageAll  
+            costTime = time.time() - startTime
+            print 'All %d images were classified and saved in %s within %d sec.' % (nImageAll, os.path.join(csvSavingPath, csvFilename), costTime)
+        else:
+            print 'Classifier not loaded'         
 
-    ps = PatchSet(opt, allImData, allLabels)
-    ps.kmeansCentroids()
-#     ps.showCentroids()
-   
-    dicPath = ps.saveDictionaryToFile(modelPath)
-    print dicPath
-      
-      
-  
-    FD = FeatureDescriptor(dicPath)
-    X = FD.extractFeatures(allImData, 1)
-#     y = allCatNames
-    y = allLabels
-       
-    SVM = Classifier()
-    SVM.trainModel(X, y)
-    y_pred, y_proba = SVM.predict(X)
-    SVM.evaluate(y, y_pred, y_proba)
-   
-   
-     
-    modelPath = SVM.saveSVMModel(modelPath)
+    def classifyCloudImagesParallel(self, keyPath = None, host = None):
+        if self.Classifier is not None:
+            try:
+                cImageLoader = CloudImageLoader(self.Opt, keyPath = keyPath, host = host)
+                bucketList = cImageLoader.getBucketList()
+            except:
+                print 'Unable to connect cloud server'
+            
+            print 'Start classifying images on cloud server...'
+            startTime = time.time()
+            
+            manager = mp.Manager()  
+            # Result Out
+            header = ['file_path', 'class_name', 'probability']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'cloud_class_result_parallel'
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_result = manager.Queue() 
+            p_result = mp.Process(target = listener, args=('Result', q_result, csvSavingPath, csvFilename))
+#             p_result.start()
+            
+            # Error Out
+            header = ['file_path', 'file_size']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'cloud_error'
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_error = manager.Queue() 
+            p_error = mp.Process(target = listener, args=('Error', q_error, csvSavingPath, csvFilename))
+#             p_error.start()
+                        
+            pool = mp.Pool(processes = 4)
+            print 'Pooling workers'
+            for (i, key) in enumerate(bucketList):
+                if i < 500:
+                    print i
+                    isValid, keyname = cImageLoader.isKeyValidImageFormat(key)
+                    if isValid:
+                        pool.apply(cloudWorker, args =  (Opt, self.FeatureDescriptor, self.Classifier, cImageLoader, key, q_result, q_error))
+                else:
+                    endTime = time.time()
+                    print 'All images were classified in', endTime - startTime, 'sec'
+                    break
+            # Terminate processes
+            endTime = time.time()
+            print 'All images were classified in ', endTime - startTime, 'sec'
+            q_result.put('kill')
+            q_error.out('kill')
+            pool.close()
+            pool.join()
+            p_result.join()
+            p_error.join()
+    
+    def classifyLocalImagesParallel(self, corpusPath = None):
+        if corpusPath is None:
+            corpusPath = self.Opt.classifyCorpusPath
+        
+        if self.Classifier is not None:
+            print 'Start classifying images parallely in local disk...'
+            
+            manager = mp.Manager()  
+            # Result out
+            header = ['file_path', 'class_name', 'probability']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'local_class_result_parallel'
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_result = manager.Queue() 
+            p_result = mp.Process(target = listener, args=('Result', q_result, csvSavingPath, csvFilename))
+            p_result.start()
+            
+            
+            # Error Out
+            header = ['file_path', 'file_size']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'cloud_error'
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_error = manager.Queue() 
+            p_error = mp.Process(target = listener, args=('Error', q_error, csvSavingPath, csvFilename))
+            p_error.start()
+            
+            pool = mp.Pool(processes = mp.cpu_count() + 2)
+            print 'Pooling workers'
+            for dirPath, dirNames, fileNames in os.walk(corpusPath):   
+                for f in fileNames:
+                    fname, suffix = Common.getFileNameAndSuffix(f)
+                    if suffix in self.Opt.validImageFormat:                
+                        filename = os.path.join(dirPath, f)
+                        pool.apply(localWorker, args = (Opt, self.FeatureDescriptor, self.Classifier, filename, q_result, q_error))
 
-#   
-#     modelPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/nClass_7_2014-10-11'
-#     print modelPath
-    SVM_ = Classifier(clfPath = modelPath)
-      
-    y_pred, y_proba = SVM_.predict(X)
-    SVM_.evaluate(y, y_pred, y_proba)
-      
+            # Terminate processes
+            q_result.put('kill')
+            q_error.out('kill')
+            pool.close()
+            pool.join()
+            p_result.join()
+            p_error.join()
+             
+    def classifyLocalImages(self, corpusPath = None):
+        
+        if corpusPath is None:
+            corpusPath = self.Opt.classifyCorpusPath
+        
+        if self.Classifier is not None:
+            print 'Start classifying images in local disk...'
+            startTime = time.time()
+            nImageAll = 0
+            header = ['file_path', 'class_name', 'probability']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'class_result'
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            
+            for dirPath, dirNames, fileNames in os.walk(corpusPath):   
+                for f in fileNames:
+                    fname, suffix = Common.getFileNameAndSuffix(f)
+                    if suffix in self.Opt.validImageFormat:
+                        
+                        filename = os.path.join(dirPath, f)
+                        # Loading Images
+                        imData, imDims, dimSum = ImageLoader.loadImagesByList([filename], self.Opt.finalDim)
+                            
+                        # Extracting Features
+                        X = self.FeatureDescriptor.extractSingleImageFeatures(imData, 1)
+#                         print X
+                        # Classify
+                        y_pred, y_proba = self.Classifier.predict(X)
+                        
+                        result = zip([filename], y_pred, y_proba)
+                        Common.saveCSV(csvSavingPath, csvFilename, result, mode = 'ab', consoleOut = False)
+                        nImageAll += 1 
+                        if np.mod(nImageAll, 100) == 0:
+                            print '%d images have been classified.' % nImageAll
+            costTime = time.time() - startTime
+            print 'All %d images were classified and saved in %s within %d sec.' % (nImageAll, os.path.join(csvSavingPath, csvFilename), costTime)
+        else:
+            print 'Classifier not loaded'         
+
+if __name__ == '__main__': 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-#     #     print allCatNames
-# #     featureName = FeatureDescriptor.getFeatureNames(allImData.shape[1])
-# 
-#     # Split into training and test set (e.g., 80/20)
-#     X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, Y, test_size=0.2, random_state=0)
-#     
-#     # Choose estimator
-#     estimator = svm.SVC(kernel = 'rbf')
-#     
-#     # Choose cross-validation iterator
-#     cv = cross_validation.ShuffleSplit(X_train.shape[0], n_iter=10, test_size=0.2, random_state=0)
-#     
-#     # Tune the hyperparameters
-#     gammas = np.logspace(-6, -1, 10)
-#     classifier = grid_search.GridSearchCV(estimator=estimator, cv=cv, param_grid=dict(gamma=gammas))
-#     
-#     classifier.fit(X_train, y_train)
-#      
-# #     # Debug algorithm with learning curve
-# #     title = 'Learning Curves (SVM, linear kernel, $\gamma=%.6f$)' %classifier.best_estimator_.gamma
-# #     estimator = svm.SVC(kernel='linear', gamma=classifier.best_estimator_.gamma)
-# # #     learning_curve.plot_learning_curve(estimator, title, X_train, y_train, cv=cv)
-# #     plt.show()
-#      
-#     # Final evaluation on the test set
-#     print classifier.score(X_test, y_test)
-#     print 
-#      
-#     #  Test over-fitting in model selection with nested cross-validation (using the whole dataset)
-# #     cross_validation.cross_val_score(classifier, X, Y)
-#      
-#     # Train final model on whole dataset
-#     classifier.fit(X, Y)
-#     print classifier.score(X, Y)
-# 
-#     estimator.fit(X, Y)
-#     print estimator.score(X, Y)
-# 
-# #     print classifier.decision_function(X)
-# 
-#     result =  classifier.predict(X_test)
-#     print result.shape
-#     print result
-#     fileList = DataSet.getFileNamesFromPath(path)
-#     print fileList
-    
-    
-    
-            # Debug algorithm with learning curve
-#         title = 'Learning Curves (SVM, linear kernel, $\gamma=%.6f$)' %classifier.best_estimator_.gamma
-#         estimator = svm.SVC(kernel='rb', gamma=classifier.best_estimator_.gamma)
-#         learning_curve.plot_learning_curve(estimator, title, X_train, y_train, cv=cv)
-#         plt.show()
-         
+    Opt = Opt(isClassify = True)
+#     corpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/testCorpus"
+    VCLF = VizClassifier(Opt, clf = 'SVM')
+#     VCLF.classifyLocalImages()
+#     VCLF.classifyCouldImages()
+#     VCLF.classifyLocalImagesParallel()
+    VCLF.classifyCloudImagesParallel()

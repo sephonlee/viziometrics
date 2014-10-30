@@ -5,7 +5,7 @@ import datetime
 import csv
 
 # Class of all parameters
-class Opt():
+class Option():
     def __init__(self, isTrain = False, isTest = False, isClassify = False):
         
         ## Mode
@@ -26,7 +26,7 @@ class Opt():
         self.isTest = isTest
         self.isClassify = isClassify
         
-        if self.isTrain  or self.isClassify:
+        if self.isTrain or self.isClassify:
             print 'Warning! Must select either training mode or classifying mode'
         
         ## Classifiers
@@ -35,6 +35,7 @@ class Opt():
 
         ## S3 Data Read Parameter
         self.keyPath = '/Users/sephon/Desktop/Research/VizioMetrics/keys.txt'
+#         self.keyPath = '/home/ec2-user/VizioMetrics/keys.txt'
         self.host = 'escience.washington.edu.viziometrics'
 
         ## Data Read Parameter
@@ -42,14 +43,15 @@ class Opt():
 #         self.Ntrain = 1                  #/ Number of training images per category
 #         self.Ntest = 1                   #/ Number of test images per category
         self.validImageFormat = ['jpg', 'tif', 'bmp', 'png', 'tiff']    # Valid image formats
-        self.classNames = ['photo', 'test3','scheme', 'test2', 'table', 'visualization', 'multichart']
+#         self.classNames = ['photo', 'test3','scheme', 'test2', 'table', 'visualization', 'multichart']
+        self.classNames = ['bar', 'boxplot', 'heatmap', 'line', 'pie', 'scatter']
         self.classNames = sorted(self.classNames)
         self.classIDs = range(1, len(self.classNames)+1)        # Start from 1
         self.classInfo = dict(zip(self.classNames, self.classIDs))
         
         
         ## Dictionary Parameter
-        self.Npatches = 50000;           # Number of patches
+        self.Npatches = 250000;           # Number of patches
         self.Ncentroids = 200;           # Number of centroids
         self.rfSize = 6;                 # Receptor Field Size (i.e. Patch Size)
         self.kmeansIterations = 100      # Iterations for kmeans centroid computation
@@ -67,9 +69,11 @@ class Opt():
             ## New Model Name
             self.modelName = 'nClass_%d_' % len(self.classNames)
             ## Corpus Path
-            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/VizSet_pm_ee_cat014_sub"
+            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/VizSet_pm_ee_cat014_quantitative"
+#             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/VizSet_pm_ee_cat014_quantitative"
             ## Model Saving Path
             self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model"
+#             self.modelSavingPath = "/home/ec2-user/VizioMetrics/Model"
             ## New Model Path
             self.modelPath = Common.getModelPath(self.modelSavingPath, self.modelName)
             
@@ -78,34 +82,42 @@ class Opt():
         ##### Testing ######
         if self.isTest:
             ## Model ID
-            self.modelName = 'nClass_7_2014-10-16_full'
+            self.modelName = 'nClass_7_2014-10-19'
             ## Model Saving Path
             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model'
+#             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model'
             ## Corpus Path
             self.testCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/VizSet_pm_ee_cat014_test"
+#             self.testCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/VizSet_pm_ee_cat014_test"
             ## Default Dictionary Path
-            self.dicPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/nClass_7_2014-10-16_full/'
+            self.dicPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/nClass_7_2014-10-19/'
+#             self.dicPath = '/home/ec2-user/VizioMetrics/Model/nClass_7_2014-10-19/'
             ## Default SVM Model Path
             self.svmModelPath = os.path.join(self.modelSavingPath, self.modelName)
             ## Result Directory
             self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
+#             self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
             self.resultPath  = Common.getModelPath(self.resultSavingPath, self.modelName)
         
         
         ##### Testing/Classifying #####
         if self.isClassify:
             ## Model ID
-            self.modelName = 'nClass_7_2014-10-14_1'
+            self.modelName = 'nClass_7_2014-10-19'
             ## Model Saving Path
             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model'
+#             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model'
             ## Corpus Path
-            self.classifyCorpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/testCorpus'
+            self.classifyCorpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/sketchCorpus'
+#             self.classifyCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/VizSet_pm_ee_cat014_test"
             ## Default Dictionary Path
-            self.dicPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/nClass_7_2014-10-14_1/'
+            self.dicPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/nClass_7_2014-10-19/'
+#             self.dicPath = '/home/ec2-user/VizioMetrics/Model/nClass_7_2014-10-19/'
             ## Default SVM Model Path
             self.svmModelPath = os.path.join(self.modelSavingPath, self.modelName)
             ## Result Directory
             self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
+#             self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
             self.resultPath  = Common.getModelPath(self.resultSavingPath, '')
             
         print 'Options set!\n'

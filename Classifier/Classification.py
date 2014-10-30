@@ -2,6 +2,7 @@
 from Dictionary import *
 from Options import *
 from DataManager import *
+# from MultiProcessingFunctions import *
 
 # SVM Classifier
 from sklearn.externals import joblib
@@ -9,7 +10,13 @@ from sklearn import svm
 from sklearn import cross_validation
 from sklearn import grid_search
 from sklearn import metrics
+# from cStringIO import StringIO
 import csv
+import itertools
+# from PIL import Image
+
+import multiprocessing as mp
+
 
 # This class needs a given path to dictionary
 class FeatureDescriptor():
@@ -17,6 +24,7 @@ class FeatureDescriptor():
     def __init__(self, dicPath):
         
         try:
+            self.dicPath = dicPath
             dicPath = os.path.join(dicPath, 'dictionaryModel.npz')
             dictionary = np.load(dicPath)
             print 'Dictionary loaded from', dicPath
@@ -27,7 +35,15 @@ class FeatureDescriptor():
             self.whitening = dictionary['whitening']
             self.centroids = dictionary['centroids']
             self.Ncentroids = dictionary['Ncentroids']
-
+            self.FSMean = dictionary['FSMean']
+            self.FSSd = dictionary['FSSd']
+            
+            if self.FSMean == 'unavailable':
+                print 'Feature Descriptor is not available'
+                self.unTrained = True
+            else:
+                self.unTrained = False
+            
         except:
             print 'Unable to load dictionary'
         
@@ -79,59 +95,47 @@ class FeatureDescriptor():
         return Q
     
     def extractSingleImageFeatures (self, X, subdivLevels = 1):
-                
-        print 'start'
-        cc = np.sum(np.power(self.centroids,2), axis = 1).T  
-        sz = self.finalDim[0] * self.finalDim[1]
-
-        XC = np.zeros((1, (4**subdivLevels)*self.Ncentroids))
-        ps = FeatureDescriptor.im2col(np.reshape(X[0,0:sz], self.finalDim[0:2]), (self.rf, self.rf))  
-        ps = np.divide(ps - np.mean(ps, axis = 1), np.sqrt(np.var(ps, axis = 1) +1))
-#            
-        print 'start2'     
-        if self.whitening:
-            print 'start2.1'
-#             print 'ps', ps
-#             print 'M', self.M
-#             print 'P', self.P
-            kk = ps - self.M
-            print kk
-            np.dot(kk, self.P)
-            ps = np.dot((ps - self.M), self.P)
-            print 'start2.2'
-           
-        print 'start2.5'            
-        xx = np.sum(np.power(ps, 2), axis = 1)
-        xc = np.dot(ps, self.centroids.T)
-        z = np.sqrt(cc + xx - 2*xc)
         
-        print 'start3'   
-        v = np.min(z, axis = 1)
-        inds = np.argmin(z, axis = 1)
-        mu = np.mean(z, axis = 1)
-        ps = mu - z
-        ps[ps < 0] = 0
-            
-        print 'start3.5'       
-        off = np.asmatrix(range(0, (z.shape[0])*self.Ncentroids, self.Ncentroids))
-        ps = np.zeros((ps.shape[0]*ps.shape[1],1))
-        ps[off.T + inds] = 1
-        ps = np.reshape(ps, (z.shape[0],z.shape[1]))#
+        if not self.unTrained:
+            Nimages = 1
+    
+            cc = np.asmatrix(np.sum(np.power(self.centroids,2), axis = 1).T)
+            sz = self.finalDim[0] * self.finalDim[1]
+    
+            XC = np.zeros((Nimages, (4**subdivLevels)*self.Ncentroids))
+    
+            ps = FeatureDescriptor.im2col(np.reshape(X[0,0:sz], self.finalDim[0:2], 'F'), (self.rf, self.rf))
+            ps = np.divide(ps - np.mean(ps, axis = 1), np.sqrt(np.var(ps, axis = 1) +1))
+    
+            if self.whitening:
+                ps = np.dot((ps - self.M), self.P)
                 
-        prows = self.finalDim[0] - self.rf + 1
-        pcols = self.finalDim[1]- self.rf + 1
-        ps = np.reshape(ps, (prows, pcols, self.Ncentroids))
-                
-        XC[0, :] = FeatureDescriptor.subdivPooling(ps, subdivLevels).T
-            
-        print 'start4'   
-        mean = np.mean(XC, axis = 0)
-        sd = np.sqrt(np.var(XC, axis = 0) + 0.01)
-        XCs = np.divide(XC - mean, sd)
-#       XCs = np.hstack([XCs, np.ones((XCs.shape[0],1))])
-        print 'here'
-        print XCs
-        return XCs
+            xx = np.sum(np.power(ps, 2), axis = 1)
+            xc = np.dot(ps, self.centroids.T)
+            z = np.sqrt(cc + xx - 2*xc)
+    
+            v = np.min(z, axis = 1)
+            inds = np.argmin(z, axis = 1)#
+            mu = np.mean(z, axis = 1)
+            ps = mu - z
+            ps[ps < 0] = 0
+    
+            off = np.asmatrix(range(0, (z.shape[0])*self.Ncentroids, self.Ncentroids))
+            ps = np.zeros((ps.shape[0]*ps.shape[1],1))
+            ps[off.T + inds] = 1
+            ps = np.reshape(ps, (z.shape[1],z.shape[0]), 'F').T#
+    
+                    
+            prows = self.finalDim[0] - self.rf + 1
+            pcols = self.finalDim[1]- self.rf + 1
+            ps = np.reshape(ps, (prows, pcols, self.Ncentroids), 'F')
+                    
+            XC[0, :] = FeatureDescriptor.subdivPooling(ps, subdivLevels).T
+        
+            XCs = np.divide(XC - self.FSMean, self.FSSd)
+            return XCs
+        else:
+            print 'FSMean and FSSd are not available, please trained model first'
         
 
     
@@ -141,56 +145,78 @@ class FeatureDescriptor():
         startTime = time.time()
         
         Nimages = X.shape[0]
-        
-        cc = np.sum(np.power(self.centroids,2), axis = 1).T  
+
+        cc = np.asmatrix(np.sum(np.power(self.centroids,2), axis = 1).T)
         sz = self.finalDim[0] * self.finalDim[1]
 
         XC = np.zeros((Nimages, (4**subdivLevels)*self.Ncentroids))
-
+        
+        
         for i in range(0, Nimages):
             
             if np.mod(i, 100) == 0:
                 print 'Extracting features:', i, '/', Nimages
 
-            ps = FeatureDescriptor.im2col(np.reshape(X[i,0:sz], self.finalDim[0:2]), (self.rf, self.rf))  
+            ps = FeatureDescriptor.im2col(np.reshape(X[i,0:sz], self.finalDim[0:2], 'F'), (self.rf, self.rf))
             ps = np.divide(ps - np.mean(ps, axis = 1), np.sqrt(np.var(ps, axis = 1) +1))
-#                 
             if self.whitening:
                 ps = np.dot((ps - self.M), self.P)
-                    
+
             xx = np.sum(np.power(ps, 2), axis = 1)
             xc = np.dot(ps, self.centroids.T)
             z = np.sqrt(cc + xx - 2*xc)
-                
+
             v = np.min(z, axis = 1)
             inds = np.argmin(z, axis = 1)#
             mu = np.mean(z, axis = 1)
             ps = mu - z
             ps[ps < 0] = 0
-                
+#             print 'there'
             off = np.asmatrix(range(0, (z.shape[0])*self.Ncentroids, self.Ncentroids))
             ps = np.zeros((ps.shape[0]*ps.shape[1],1))
             ps[off.T + inds] = 1
-            ps = np.reshape(ps, (z.shape[0],z.shape[1]))#
+            ps = np.reshape(ps, (z.shape[1],z.shape[0]), 'F').T#
+
                 
             prows = self.finalDim[0] - self.rf + 1
             pcols = self.finalDim[1]- self.rf + 1
-            ps = np.reshape(ps, (prows, pcols, self.Ncentroids))
+            ps = np.reshape(ps, (prows, pcols, self.Ncentroids), 'F')
                 
             XC[i, :] = FeatureDescriptor.subdivPooling(ps, subdivLevels).T
             
-        print 'Extracting features:', i, '/', Nimages    
+        print 'Extracting features:', i+1, '/', Nimages    
         endTime = time.time()
         print X.shape[0], 'feature vectors computed in', endTime-startTime, 'sec\n'
+        
+        if self.unTrained:
+            print 'Updated dictionary....'
+            self.FSMean = np.mean(XC, axis = 0)
+            self.FSSd = np.sqrt(np.var(XC, axis = 0) + 0.01)
+            self.saveDictionaryToFile() 
+        else:
+            print 'Normalized by trained features'
             
-        mean = np.mean(XC, axis = 0)
-        sd = np.sqrt(np.var(XC, axis = 0) + 0.01)
-        XCs = np.divide(XC - mean, sd)
-#       XCs = np.hstack([XCs, np.ones((XCs.shape[0],1))])
+        XCs = np.divide(XC - self.FSMean, self.FSSd)
             
         return XCs
-        
-
+    
+    def saveDictionaryToFile(self):
+        print 'Saving dictionary...'   
+        filePath = os.path.join(self.dicPath, 'dictionaryModel')
+        np.savez(filePath,
+                 rfSize = self.rf,
+                 finalDim = self.finalDim,
+                 whitening = self.whitening,
+                 Ncentroids = self.Ncentroids,
+                 Mean = self.M,
+                 Patch = self.P,
+                 centroids = self.centroids,
+                 FSMean = self.FSMean,
+                 FSSd = self.FSSd
+                 )
+         
+        print 'Dictionary Updated in', self.dicPath, '\n'
+        return self.dicPath
 
 class SVMClassifier:
     
@@ -372,17 +398,17 @@ class VizClassifier():
             print 'Please change Options to classify mode (isClassify = True)'
         
         
-    def classifyCouldImages(self):
+    def classifyCouldImages(self, keyPath = None, host = None):
         
-        if self.Classifier is not None:
-            
+        if self.Classifier is not None:      
             try:
-                cImageLoader = cloudImageLoader(self.Opt)
+                cImageLoader = CloudImageLoader(self.Opt, keyPath = keyPath, host = host)
                 bucketList = cImageLoader.getBucketList()
             except:
                 print 'Unable to connect cloud server'
             
-            print 'Start classifying images...'
+            print 'Start classifying images on cloud server...'
+            startTime = time.time()
             nImageAll = 0
             header = ['file_path', 'class_name', 'probability']
             csvSavingPath = self.Opt.resultPath
@@ -393,28 +419,161 @@ class VizClassifier():
                 isValidImage, suffix = cImageLoader.isKeyValidImageFormat(key)
                 if isValidImage:
                     
-                    fname = "img.%s" % suffix
-                    fp = open(fname, "w")
-                    key.get_file(fp)
-                    fp.close()
-                    print key.name
-                    result = self.__processing(fname, key.name)
+                    # Load Images
+                    try:
+                        img =  CloudImageLoader.keyToValidImage(key)
+                    except:
+                        img = CloudImageLoader.keyToValidImageOnDisk(key, 'tmp')
+                        
+                    imData, imDim = ImageLoader.preImageProcessing(img, self.Opt.finalDim)
+                    
+                    # Extracting Features
+                    X = self.FeatureDescriptor.extractSingleImageFeatures(imData, 1)
+                    # Classify
+                    y_pred, y_proba = self.Classifier.predict(X)
+                          
+                    result = zip([key.name], y_pred, y_proba)
+                    print result
                     Common.saveCSV(csvSavingPath, csvFilename, result, mode = 'ab', consoleOut = False)
                     nImageAll += 1 
-                    if np.mod(nImageAll, 1000) == 0:
+                    if np.mod(nImageAll, 100) == 0:
                         print '%d images have been classified' % nImageAll  
-            print 'All %d images were classified and saved in %s.' % (nImageAll, os.path.join(csvSavingPath, csvFilename))
+            costTime = time.time() - startTime
+            print 'All %d images were classified and saved in %s within %d sec.' % (nImageAll, os.path.join(csvSavingPath, csvFilename), costTime)
         else:
             print 'Classifier not loaded'         
 
+    def classifyCloudImagesParallel(self, start, end, keyPath = None, host = None):
+        if self.Classifier is not None:
+            try:
+                cImageLoader = CloudImageLoader(self.Opt, keyPath = keyPath, host = host)
+                bucketList = cImageLoader.getBucketList()
+            except:
+                print 'Unable to connect cloud server'
+            
+            print 'Start classifying images on cloud server...'
+            startTime = time.time()
+            
+            manager = mp.Manager()  
+            # Result Out
+            header = ['file_path', 'class_name', 'probability']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'cloud_class_result_parallel_%d-%d' % (start,end)
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_result = manager.Queue() 
+            p_result = mp.Process(target = listener, args=('Result', q_result, csvSavingPath, csvFilename))
+            p_result.start()
+            
+            # Error Out
+            header = ['file_path', 'file_size']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'cloud_error_%d-%d' % (start,end)
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_error = manager.Queue() 
+            p_error = mp.Process(target = listener, args=('Error', q_error, csvSavingPath, csvFilename))
+            p_error.start()
+                        
+            pool = mp.Pool(processes = mp.cpu_count() + 2)
+            print 'CPU count: %d' % mp.cpu_count()
+            # Collect keys
+            print 'Collect keys from %d to %d...' %(start, end)
+            keys_to_process = []                
+            endPoint = 0
+            i = 0
+            for (i, key) in enumerate(bucketList):
+                if i >= start and i < end:
+                    keys_to_process.append(key)
+                    dataEnd = True
+                    print 'index = %d' %i
+                    endPoint = i
+                elif i >= end:
+                    dataEnd = False
+                    break
+            endTime = time.time()
+            print end - start, 'keys were classified in ', endTime - startTime, 'sec'
+            print 'Collection ends at key index = %d' % i
+            
+            # Pooling
+            print 'Start Pooling...'
+            startTime = time.time() 
+            results = pool.map(cloudWorker,  itertools.izip(keys_to_process, itertools.repeat(q_result), itertools.repeat(q_error)))
+            # Terminate processes
+            endTime = time.time()
+            print 'All images were classified in', endTime - startTime, 'sec.\n'
+            
+            q_result.put('kill')
+            q_error.put('kill')
+            pool.close()
+            pool.join()
+            p_result.join()
+            p_error.join()
+            
+            if dataEnd:
+                print 'All cloud images (%d) were classified' %endPoint
+    
+    def classifyLocalImagesParallel(self, corpusPath = None):
+        if corpusPath is None:
+            corpusPath = self.Opt.classifyCorpusPath
         
+        if self.Classifier is not None:
+            print 'Start classifying images parallel in local disk...'
+            startTime = time.time()
+            
+            manager = mp.Manager()  
+            # Result out
+            header = ['file_path', 'class_name', 'probability']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'local_class_result_parallel'
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_result = manager.Queue() 
+            p_result = mp.Process(target = listener, args=('Result', q_result, csvSavingPath, csvFilename))
+            p_result.start()
+            
+            
+            # Error Out
+            header = ['file_path', 'file_size']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'cloud_error'
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_error = manager.Queue() 
+            p_error = mp.Process(target = listener, args=('Error', q_error, csvSavingPath, csvFilename))
+            p_error.start()
+            
+            pool = mp.Pool(processes = mp.cpu_count() + 2)
+            
+            # Collect filepath
+            print 'Collect files...'
+            file_to_process = []
+            for dirPath, dirNames, fileNames in os.walk(corpusPath):   
+                for f in fileNames:
+                    file_to_process.append(os.path.join(dirPath, f))
+            endTime = time.time()
+            print len(file_to_process), 'keys were classified in ', endTime - startTime, 'sec'
+            
+            # Pooling
+            print 'Start Pooling...'
+            startTime = time.time() 
+            results = pool.map(localWorker,  itertools.izip(file_to_process, itertools.repeat(q_result), itertools.repeat(q_error)))
+            # Terminate processes
+            endTime = time.time()
+            print 'All images were classified in', endTime - startTime, 'sec.\n'
+            
+            # Terminate processes
+            q_result.put('kill')
+            q_error.put('kill')
+            pool.close()
+            pool.join()
+            p_result.join()
+            p_error.join()
+             
     def classifyLocalImages(self, corpusPath = None):
         
         if corpusPath is None:
             corpusPath = self.Opt.classifyCorpusPath
         
         if self.Classifier is not None:
-            print 'Start classifying images...'
+            print 'Start classifying images in local disk...'
+            startTime = time.time()
             nImageAll = 0
             header = ['file_path', 'class_name', 'probability']
             csvSavingPath = self.Opt.resultPath
@@ -425,39 +584,33 @@ class VizClassifier():
                 for f in fileNames:
                     fname, suffix = Common.getFileNameAndSuffix(f)
                     if suffix in self.Opt.validImageFormat:
+                        
                         filename = os.path.join(dirPath, f)
-                        result = self.__processing(filename)
+                        # Loading Images
+                        imData, imDims, dimSum = ImageLoader.loadImagesByList([filename], self.Opt.finalDim)
+                            
+                        # Extracting Features
+                        X = self.FeatureDescriptor.extractSingleImageFeatures(imData, 1)
+
+                        # Classify
+                        y_pred, y_proba = self.Classifier.predict(X)
+                        
+                        result = zip([filename], y_pred, y_proba)
                         Common.saveCSV(csvSavingPath, csvFilename, result, mode = 'ab', consoleOut = False)
                         nImageAll += 1 
-                        if np.mod(nImageAll, 1000) == 0:
+                        if np.mod(nImageAll, 100) == 0:
                             print '%d images have been classified.' % nImageAll
-            print 'All %d images were classified and saved in %s.' % (nImageAll, os.path.join(csvSavingPath, csvFilename))
+            costTime = time.time() - startTime
+            print 'All %d images were classified and saved in %s within %d sec.' % (nImageAll, os.path.join(csvSavingPath, csvFilename), costTime)
         else:
             print 'Classifier not loaded'         
-                    
-    # 1. Loading Images  
-    # 2. Extracting Features
-    # 3. Saving Results
-    def __processing(self, filename, keyname = None):
-        # Loading Images
-        imData, imDims, dimSum = ImageLoader.loadImages([filename], self.Opt.finalDim)
-                        
-        # Extracting Features
-        X = self.FeatureDescriptor.extractSingleImageFeatures(imData, 1)
-        y_pred, y_proba = self.Classifier.predict(X)
 
-        # Saving Results
-        if keyname is not None:
-            result = zip([keyname], y_pred, y_proba)
-        else:
-            result = zip([filename], y_pred, y_proba)
-        return result
-    
-    
 if __name__ == '__main__': 
     
-    Opt = Opt(isClassify = True)
-    corpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/testCorpus"
+    Opt = Option(isClassify = True)
+#     corpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/testCorpus"
     VCLF = VizClassifier(Opt, clf = 'SVM')
-#     VCLF.classifyLocalImages(corpusPath = corpusPath)
+#     VCLF.classifyLocalImages()
     VCLF.classifyCouldImages()
+#     VCLF.classifyLocalImagesParallel()
+#     VCLF.classifyCloudImagesParallel(1000, 1100)

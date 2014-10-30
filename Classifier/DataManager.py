@@ -2,17 +2,18 @@ import time
 import os, errno
 import numpy as np
 import cv2 as cv
-import csv
+from Options import *
 
-import boto
+# CloudImageLoader
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+from PIL import Image
+from cStringIO import StringIO
 
-from Options import *
-import multiprocessing as mp
+# 
+# import matplotlib.pyplot as plt
 
-
-class cloudImageLoader():
+class CloudImageLoader():
     
     Opt = None
     bucket = None
@@ -42,22 +43,29 @@ class cloudImageLoader():
         else:
             return False, ''
         
-    def keyToValidImage(self, key):
-        
-#         filename, suffix= Common.getFileNameAndSuffix(key.name)
-#         if key.name.split('.')[1] in self.Opt.validImageFormat:
-            
-        
-        
-#         print filename
-#         fname = "img.jpg"
-#         fp = open (fname, "w")
-# #         key.get_file(fp)
-#         fp.close
-#         
-#         image = cv.imread(fname)
-        return 
+    @ staticmethod
+    def keyToValidImage(key):
+        imgData = key.get_contents_as_string()
+        fileImgData = StringIO(imgData)
+        img = Image.open(fileImgData).convert('RGB')
+        img = np.array(img) 
+        if len(img.shape) == 3:
+            img = img[:, :, ::-1].copy() 
+        return img
+    
+    @ staticmethod
+    def keyToValidImageOnDisk(key, filename): 
 
+        keyname =  key.name.split('.')
+        suffix = keyname[1]
+        fname = filename + '.' + suffix
+        fp = open(fname, "w")
+        key.get_file(fp)
+        fp.close()
+        print 'error point'            
+        img = cv.imread(fname, 0)
+        return img
+         
 # Class of Image Data
 class ImageLoader():
     
@@ -131,7 +139,7 @@ class ImageLoader():
             
             classPath = os.path.join(inPath, className)
             fileList = self.getFileNamesFromPath(classPath)
-            imData, imDims, dimSum = self.loadImages(fileList, self.Opt.finalDim)
+            imData, imDims, dimSum = self.loadImagesByList(fileList, self.Opt.finalDim)
 
             NImages = len(imDims)
             
@@ -177,20 +185,17 @@ class ImageLoader():
     
     @ staticmethod
     def preImageProcessing(img, finalDim):
-        
-        img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        if len(img.shape) == 3:
+            img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
         imDim = img.shape 
-
         img = cv.resize(img, (finalDim[0], finalDim[1]))
         img = np.asarray(img)
-        img = np.reshape(img, (1, finalDim[0]* finalDim[1]))
-        
+        img = np.reshape(img, (1, finalDim[0]* finalDim[1]), 'F')
         return img, imDim
-    
-    
-    # return all file paths from the given directory with given file Type
+        
+    # return all images data from the given directory 
     @ staticmethod
-    def loadImages(fileList, finalDim):
+    def loadImagesByList(fileList, finalDim):
         
         nx, ny, nz = finalDim;
         imDims = [];
@@ -203,7 +208,7 @@ class ImageLoader():
         dimWidthSum = 0
         for filename in fileList:
             
-            img = cv.imread(filename)
+            img = cv.imread(filename)            
             img, imDim = ImageLoader.preImageProcessing(img, finalDim)
             
             dimHeightSum += imDim[0]
@@ -233,7 +238,7 @@ class ImageLoader():
 if __name__ == '__main__':   
 
 
-    Opt = Opt(isTrain = True)
+    Opt = Option(isTrain = True)
     modelPath = Opt.modelPath
     Opt.saveSetting(modelPath)
     
