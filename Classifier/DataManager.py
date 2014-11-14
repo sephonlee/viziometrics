@@ -43,6 +43,13 @@ class CloudImageLoader():
         else:
             return False, ''
         
+    def upLoadingFile(self, keyName, keyPath, filePath):
+        print 'Uploading %s as %s' %(filePath, keyName)
+        full_key_name = os.path.join(keyPath, keyName)
+        k = self.bucket.new_key(full_key_name)
+        k.set_contents_from_filename(filePath)
+        print 'Complete Uploading'
+        
     @ staticmethod
     def keyToValidImage(key):
         imgData = key.get_contents_as_string()
@@ -51,8 +58,19 @@ class CloudImageLoader():
         img = np.array(img) 
         if len(img.shape) == 3:
             img = img[:, :, ::-1].copy() 
-        return img
+        return img    
     
+    def keyToFile(self, keyname, filename):
+        key = self.bucket.get_key(keyname)
+        keyname =  key.name.split('.')
+        suffix = keyname[1]
+        fname = filename + '.' + suffix
+        fp = open(fname, "w")
+        key.get_file(fp)
+        fp.close()
+        '% saved'
+        return filename
+        
     @ staticmethod
     def keyToValidImageOnDisk(key, filename): 
 
@@ -83,7 +101,6 @@ class ImageLoader():
         self.loadTrainDataByQuerry()
         return
     
-    
     # Load testing image data from local classified directories
     # Directory name = class name
     def loadTestDataFromLocalClassDir(self, inPath = None, outPath = None):
@@ -101,6 +118,7 @@ class ImageLoader():
         if outPath is None:
             outPath = self.Opt.modelPath
         return self.loadDataFromLocalClassDir(inPath, outPath, mode = 'train')
+        
         
     def loadDataFromLocalClassDir(self, inPath, outPath, mode = 'unknown'):
         print "Loading Images from" + inPath
@@ -131,7 +149,6 @@ class ImageLoader():
             if dirName in self.Opt.classNames:
                 localClassDirs.append(dirName)
                 localClassIDs[dirName] = self.Opt.classInfo[dirName]
-        
         
         ####################
         # Loop to read files
@@ -180,7 +197,7 @@ class ImageLoader():
         Common.saveCSV(outPath, csvFileName, saveContent, header)
 
         # output
-        return allImData, allLabels, allClassNames
+        return allImData, allLabels, allClassNames, localClassDirs
     
     
     @ staticmethod

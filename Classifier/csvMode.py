@@ -31,7 +31,7 @@ count_errorFile = 0
 
 with open(finalClassFile, 'wb') as outcsv:
     writer = csv.writer(outcsv, dialect='excel')
-    header = ['file_path', 'class_name', 'probability']
+    header = ['image_id', 'image_location', 'class_name', 'probability']
     writer.writerow(header)
     for f in resultCSVList:
         print 'converting %s...' %f
@@ -41,18 +41,19 @@ with open(finalClassFile, 'wb') as outcsv:
             for row in reader:
                 count_classFile += 0
                 fname = row[0]
+                image_id = fname.split('/')[1]
                 classname = row[1]
                 classname = classname[2:-2]
                 prob = row[2]
                 prob = prob[3:-3].split()
                 prob = map(float,prob)
-                newRow = [fname, classname, prob]
+                newRow = [image_id, fname, classname, prob]
                 writer.writerow(newRow)
                 
         
 with open(finalErrorFile, 'wb') as outcsv:
     writer = csv.writer(outcsv, dialect='excel')
-    header = ['file_path', 'file_size']
+    header = ['image_id', 'image_location', 'file_size']
     writer.writerow(header)
     for f in errorCSVList:
         print 'converting %s...' %f
@@ -60,6 +61,9 @@ with open(finalErrorFile, 'wb') as outcsv:
             reader = csv.reader(incsv, dialect='excel')
             reader.next()
             for row in reader:
+                fname = row[0]
+                image_id = fname.split('/')[1]
+                row.insert(0, image_id)
                 writer.writerow(row)
                 
         

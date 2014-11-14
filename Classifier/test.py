@@ -6,23 +6,23 @@ from Dictionary import *
 if __name__ == '__main__':
     
 # #     ## Test Training
-    Opt_train = Option(isTrain = True)
-    Opt_train.saveSetting()
-    ImageLoader_train = ImageLoader(Opt_train)
-    allImData, allLabels, allCatNames = ImageLoader_train.loadTrainDataFromLocalClassDir(Opt_train.trainCorpusPath)
-          
-    Dictionary_train = DictionaryExtractor(Opt_train)
-    dicPath = Dictionary_train.getLocalDictionaryPath(allImData, allLabels)
-          
-    FD_train= FeatureDescriptor(dicPath)
-    X = FD_train.extractFeatures(allImData, 1)
-    y = allCatNames
-                
-    SVM_train = SVMClassifier(Opt_train, isTrain = True)
-    SVM_train.trainModel(X, y)
-           
-    
-    modelPath = SVM_train.saveSVMModel()
+#     Opt_train = Option(isTrain = True)
+#     Opt_train.saveSetting()
+#     ImageLoader_train = ImageLoader(Opt_train)
+#     allImData, allLabels, allCatNames = ImageLoader_train.loadTrainDataFromLocalClassDir(Opt_train.trainCorpusPath)
+#           
+#     Dictionary_train = DictionaryExtractor(Opt_train)
+#     dicPath = Dictionary_train.getLocalDictionaryPath(allImData, allLabels)
+#           
+#     FD_train= FeatureDescriptor(dicPath)
+#     X = FD_train.extractFeatures(allImData, 1)
+#     y = allCatNames
+#                 
+#     SVM_train = SVMClassifier(Opt_train, isTrain = True)
+#     SVM_train.trainModel(X, y)
+#            
+#     
+#     modelPath = SVM_train.saveSVMModel()
 #     print modelPath
 #     y_pred, y_proba = SVM_train.predict(X)
 #     SVM_train.evaluate(y, y_pred, y_proba)
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 # 
 #  
 #     ## Test Classifying
-#     Opt = Option(isClassify = True)
+    Opt = Option(isClassify = True)
 # #     corpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/testCorpus"
-#     VCLF = VizClassifier(Opt, clf = 'SVM')
-#     VCLF.classifyLocalImages(corpusPath = Opt.classifyCorpusPath)
+    VCLF = VizClassifier(Opt, clf = 'SVM')
+    VCLF.classifyLocalImages(corpusPath = Opt.classifyCorpusPath)

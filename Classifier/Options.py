@@ -34,8 +34,8 @@ class Option():
         self.activatedClassifiers = 'SVM'
 
         ## S3 Data Read Parameter
-        self.keyPath = '/Users/sephon/Desktop/Research/VizioMetrics/keys.txt'
-#         self.keyPath = '/home/ec2-user/VizioMetrics/keys.txt'
+#         self.keyPath = '/Users/sephon/Desktop/Research/VizioMetrics/keys.txt'
+        self.keyPath = '/home/ec2-user/VizioMetrics/keys.txt'
         self.host = 'escience.washington.edu.viziometrics'
 
         ## Data Read Parameter
@@ -43,8 +43,8 @@ class Option():
 #         self.Ntrain = 1                  #/ Number of training images per category
 #         self.Ntest = 1                   #/ Number of test images per category
         self.validImageFormat = ['jpg', 'tif', 'bmp', 'png', 'tiff']    # Valid image formats
-#         self.classNames = ['photo', 'test3','scheme', 'test2', 'table', 'visualization', 'multichart']
-        self.classNames = ['bar', 'boxplot', 'heatmap', 'line', 'pie', 'scatter']
+        self.classNames = ['photo','scheme', 'table', 'visualization']
+#         self.classNames = ['bar', 'boxplot', 'heatmap', 'line', 'pie', 'scatter']
         self.classNames = sorted(self.classNames)
         self.classIDs = range(1, len(self.classNames)+1)        # Start from 1
         self.classInfo = dict(zip(self.classNames, self.classIDs))
@@ -69,60 +69,65 @@ class Option():
             ## New Model Name
             self.modelName = 'nClass_%d_' % len(self.classNames)
             ## Corpus Path
-            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/VizSet_pm_ee_cat014_quantitative"
-#             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/VizSet_pm_ee_cat014_quantitative"
+#             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/VizSet_pm_ee_cat014"
+            self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/VizSet_pm_ee_cat014"
             ## Model Saving Path
-            self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model"
-#             self.modelSavingPath = "/home/ec2-user/VizioMetrics/Model"
+#             self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model"
+            self.modelSavingPath = "/home/ec2-user/VizioMetrics/Model"
             ## New Model Path
             self.modelPath = Common.getModelPath(self.modelSavingPath, self.modelName)
-            
-#         self.optSaveDst = '/Users/sephon/Desktop/Research/VizioMetrics/DB/'
         
         ##### Testing ######
         if self.isTest:
             ## Model ID
-            self.modelName = 'nClass_7_2014-10-19'
+            self.modelName = 'nClass_7_2014-10-19_4cat'
             ## Model Saving Path
-            self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model'
-#             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model'
+#             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model'
+            self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model'
             ## Corpus Path
-            self.testCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/VizSet_pm_ee_cat014_test"
-#             self.testCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/VizSet_pm_ee_cat014_test"
+#             self.testCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/VizSet_pm_ee_cat014_test"
+            self.testCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/VizSet_pm_ee_cat014_test"
+            ## Result Directory
+#             self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
+            self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
             ## Default Dictionary Path
-            self.dicPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/nClass_7_2014-10-19/'
-#             self.dicPath = '/home/ec2-user/VizioMetrics/Model/nClass_7_2014-10-19/'
+            self.dicPath = os.path.join(self.modelSavingPath, self.modelName)
             ## Default SVM Model Path
             self.svmModelPath = os.path.join(self.modelSavingPath, self.modelName)
-            ## Result Directory
-            self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
-#             self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
-            self.resultPath  = Common.getModelPath(self.resultSavingPath, self.modelName)
+            ## Assign new folder as result directory
+            self.resultPath  = Common.getModelPath(self.resultSavingPath, '')
+
         
         
-        ##### Testing/Classifying #####
+        ##### Classifying #####
         if self.isClassify:
             ## Model ID
-            self.modelName = 'nClass_7_2014-10-19'
+            self.modelName = 'nClass_7_2014-10-19_4cat'
             ## Model Saving Path
-            self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model'
-#             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model'
+#             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model'
+            self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model'
             ## Corpus Path
-            self.classifyCorpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/sketchCorpus'
-#             self.classifyCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/VizSet_pm_ee_cat014_test"
+#             self.classifyCorpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/sketchCorpus'
+            self.classifyCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/VizSet_pm_ee_cat014_test"
+            ## Result Directory
+#             self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
+            self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
             ## Default Dictionary Path
-            self.dicPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/nClass_7_2014-10-19/'
-#             self.dicPath = '/home/ec2-user/VizioMetrics/Model/nClass_7_2014-10-19/'
+            self.dicPath = os.path.join(self.modelSavingPath, self.modelName)
             ## Default SVM Model Path
             self.svmModelPath = os.path.join(self.modelSavingPath, self.modelName)
-            ## Result Directory
-            self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
-#             self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
+            ## Assign new folder as result directory
             self.resultPath  = Common.getModelPath(self.resultSavingPath, '')
             
         print 'Options set!\n'
 
-            
+    def updateClassNames(self, classNames):
+        self.classNames = classNames
+#         self.classNames = ['bar', 'boxplot', 'heatmap', 'line', 'pie', 'scatter']
+        self.classNames = sorted(self.classNames)
+        self.classIDs = range(1, len(self.classNames)+1)        # Start from 1
+        self.classInfo = dict(zip(self.classNames, self.classIDs))
+        
     def saveSetting(self, outPath = None):
         if outPath is None:
             outPath = self.modelPath
@@ -155,9 +160,7 @@ class Common():
         
     @staticmethod
     def getModelPath(path, dirName):
-        print dirName
         dirName = dirName + datetime.datetime.now().strftime("%Y-%m-%d")
-        print dirName
         return Common.makeDir(path, dirName)
     
     

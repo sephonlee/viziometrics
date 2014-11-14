@@ -9,7 +9,7 @@ import csv
 from Dictionary import *
 from Options import *
 from DataManager import *
-from Classification import *
+from Models import *
 
 import multiprocessing as mp
 

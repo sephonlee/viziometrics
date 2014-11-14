@@ -7,7 +7,7 @@ from boto.s3.key import Key
 from Dictionary import *
 from Options import *
 from DataManager import *
-from Classification import *
+from Models import *
 
 ## Global Object   
 Opt = Option(isClassify = True)
@@ -31,7 +31,7 @@ def listener(name, q, outPath, outFilename):
             costTime = time.time() - startTime
             print'%d images have been classified in %d sec. Stop Listener in %s\n' % (count - 1, costTime, mp.current_process().name)
             break
-        writer.writerow(content)
+        writer.writerow(content[0])
         if count % 10 == 0 and count != 0:
             print '%d images have been collected in %s.' % (count, outFilePath)
             
