@@ -1,3 +1,7 @@
+# Class to load images
+# 1. CloadImageLoader: Load images from s3 server. Usually for testing and classification
+# 2. ImageLoader: Load images from local disk. Usually for training 
+
 import time
 import os, errno
 import numpy as np
@@ -260,4 +264,4 @@ if __name__ == '__main__':
     Opt.saveSetting(modelPath)
     
     ImgLoader = ImageLoader(Opt)
-    allImData, allLabels, allCatNames = ImgLoader.loadTrainDataFromLocalClassDir(Opt.trainCorpusPath, modelPath)
+    allImData, allLabels, allCatNames, newClassNames = ImgLoader.loadTrainDataFromLocalClassDir(Opt.trainCorpusPath, modelPath)      

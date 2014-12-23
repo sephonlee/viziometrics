@@ -1,4 +1,8 @@
-# Viz Classifier
+# Image Processing Models and Machine Learning Models
+# 1. FeatureDescriptor: Feature images
+# 2. SVM Classifier: SVM-based classifier
+# 3. Convolusion Neural Network: No implemented yet
+
 from Dictionary import *
 from Options import *
 # from DataManager import *

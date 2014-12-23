@@ -1,4 +1,6 @@
-# Viz Classifier
+# Visualization Classifier
+# Main Program
+
 from Dictionary import *
 from Options import *
 from DataManager import *
@@ -13,12 +15,8 @@ class VizClassifier():
     Opt = None
     FeatureDescriptor = None
     Classifier = None
-    
-    
-#     nImageAll = 0
    
     def loadSVMClassifier(self):
-        
         self.FeatureDescriptor = FeatureDescriptor(self.Opt.dicPath) 
         self.Classifier = SVMClassifier(self.Opt, clfPath = self.Opt.svmModelPath)
         print 'SVM Classifier ready. \n'

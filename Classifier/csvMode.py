@@ -1,3 +1,5 @@
+# Modify .csv files that has "[ ]"
+
 import os, errno, csv
 import locale
 

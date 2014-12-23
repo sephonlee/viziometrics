@@ -1,4 +1,5 @@
-# from os.path import *
+# All parameter setting
+# All commonly-used functions about files
 import cPickle as pickle
 import os, errno
 import datetime

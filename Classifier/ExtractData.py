@@ -1,3 +1,5 @@
+# Not use anymore
+
 import os, errno
 from os.path import *
 import tarfile
