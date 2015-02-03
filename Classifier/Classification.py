@@ -38,6 +38,45 @@ class VizClassifier():
         else:
             print 'Please change Options to classify mode (isClassify = True)'
         
+    def getClouldImageDim(self, keyPath = None, host = None):
+        if self.Classifier is not None:      
+            try:
+                cImageLoader = CloudImageLoader(self.Opt, keyPath = keyPath, host = host)
+                bucketList = cImageLoader.getBucketList()
+            except:
+                print 'Unable to connect cloud server'
+            
+            print 'Start classifying images on cloud server...'
+            startTime = time.time()
+            nImageAll = 0
+            header = ['image_id', 'image_heigh', 'image_width']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'class_result'
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            
+            for key in bucketList:
+                isValidImage, suffix = cImageLoader.isKeyValidImageFormat(key)
+                if isValidImage:
+                    
+                    # Load Images                 
+                    if key.name.split('.')[-1] in ['tif', 'tiff']:
+                        img = CloudImageLoader.keyToValidImageOnDisk(key, 'tmp')
+                    else:
+                        img =  CloudImageLoader.keyToValidImage(key)
+                        
+                    imDim = img.shape
+                    del img
+    
+                    result = zip([key.name.split('/')[1]], [imDim[0]], [imDim[1]])
+                    print result
+                    Common.saveCSV(csvSavingPath, csvFilename, result, mode = 'ab', consoleOut = False)
+                    nImageAll += 1 
+                    if np.mod(nImageAll, 100) == 0:
+                        print '%d images have been extracted' % nImageAll  
+            costTime = time.time() - startTime
+            print 'All %d images were extracted and saved in %s within %d sec.' % (nImageAll, os.path.join(csvSavingPath, csvFilename), costTime)
+        else:
+            print 'Classifier not loaded' 
         
     def classifyCouldImages(self, keyPath = None, host = None):
         
@@ -61,10 +100,10 @@ class VizClassifier():
                 if isValidImage:
                     
                     # Load Images
-                    try:
-                        img =  CloudImageLoader.keyToValidImage(key)
-                    except:
+                    if key.name.split('.')[-1] in ['tif', 'tiff']:
                         img = CloudImageLoader.keyToValidImageOnDisk(key, 'tmp')
+                    else:
+                        img =  CloudImageLoader.keyToValidImage(key)
                         
                     imData, imDim = ImageLoader.preImageProcessing(img, self.Opt.finalDim)
                     
@@ -83,6 +122,76 @@ class VizClassifier():
             print 'All %d images were classified and saved in %s within %d sec.' % (nImageAll, os.path.join(csvSavingPath, csvFilename), costTime)
         else:
             print 'Classifier not loaded'         
+
+    def getCloudImagesDimParallel(self, start, end, keyPath = None, host = None):
+        if self.Classifier is not None:
+            try:
+                cImageLoader = CloudImageLoader(self.Opt, keyPath = keyPath, host = host)
+                bucketList = cImageLoader.getBucketList()
+            except:
+                print 'Unable to connect cloud server'
+            
+            print 'Start classifying images on cloud server...'
+            startTime = time.time()
+            
+            manager = mp.Manager()  
+            # Result Out
+            header = ['image_id', 'image_heigh', 'image_width']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'cloud_class_result_parallel_%d-%d' % (start,end)
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_result = manager.Queue() 
+            p_result = mp.Process(target = listener, args=('Result', q_result, csvSavingPath, csvFilename))
+            p_result.start()
+            
+            # Error Out
+            header = ['file_path', 'file_size']
+            csvSavingPath = self.Opt.resultPath
+            csvFilename = 'cloud_error_%d-%d' % (start,end)
+            Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+            q_error = manager.Queue() 
+            p_error = mp.Process(target = listener, args=('Error', q_error, csvSavingPath, csvFilename))
+            p_error.start()
+                        
+            pool = mp.Pool(processes = mp.cpu_count() + 2)
+            print 'CPU count: %d' % mp.cpu_count()
+            # Collect keys
+            print 'Collect keys from %d to %d...' %(start, end)
+            keys_to_process = []                
+            endPoint = 0
+            i = 0
+            for (i, key) in enumerate(bucketList):
+                if i >= start and i < end:
+                    keys_to_process.append(key)
+                    dataEnd = True
+                    print 'index = %d' %i
+                    endPoint = i
+                elif i >= end:
+                    dataEnd = False
+                    break
+            endTime = time.time()
+            print end - start, 'keys were classified in ', endTime - startTime, 'sec'
+            print 'Collection ends at key index = %d' % i
+            
+            # Pooling
+            print 'Start Pooling...'
+            startTime = time.time() 
+            results = pool.map(cloudDimWorker,  itertools.izip(keys_to_process, itertools.repeat(q_result), itertools.repeat(q_error)))
+            # Terminate processes
+            endTime = time.time()
+            print 'All images were classified in', endTime - startTime, 'sec.\n'
+            
+            q_result.put('kill')
+            q_error.put('kill')
+            pool.close()
+            pool.join()
+            p_result.join()
+            p_error.join()
+            
+            if dataEnd:
+                print 'All cloud images (%d) were classified' %endPoint
+                
+                
 
     def classifyCloudImagesParallel(self, start, end, keyPath = None, host = None):
         if self.Classifier is not None:
@@ -253,4 +362,5 @@ if __name__ == '__main__':
 #     VCLF.classifyLocalImages()
 #     VCLF.classifyCouldImages()
 #     VCLF.classifyLocalImagesParallel()
-    VCLF.classifyCloudImagesParallel(0, 100)
+#     VCLF.classifyCloudImagesParallel(0, 100)
+    VCLF.getCloudImagesDimParallel(0, 2000000)

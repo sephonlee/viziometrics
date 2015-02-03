@@ -23,9 +23,13 @@ def keyToValidImageOnDisk(key, filename):
     img = cv.imread(fname, 0)
     return img
  
-access_key = 'AKIAIDWAB66KTGCXBLJA'
-secret_key = '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'
-host = 'escience.washington.edu.viziometrics'         
+
+host = 'escience.washington.edu.viziometrics'  
+keyPath = '/home/ec2-user/VizioMetrics/keys.txt'
+f = open(keyPath, 'r')
+access_key = f.readline()[0:-1]
+secret_key = f.readline()
+       
 conn = S3Connection(access_key, secret_key)
 bucket = conn.get_bucket(host)
 bucketList = bucket.list()
@@ -33,7 +37,7 @@ bucketList = bucket.list()
  
 ### Test Read into Disk and open by openCV
 # key = bucket.get_key('imgs/PMC100321_1471-2105-3-9-2.jpg') 
-key = bucket.get_key('imgs/PMC102766_1471-2148-2-5-1.jpg')
+key = bucket.get_key('imgs/PMC101383_1471-2164-3-8-1.jpg')
 img = keyToValidImageOnDisk(key, 'test2')
 plt.imshow(img, cmap = cm.Greys_r)
 plt.show()

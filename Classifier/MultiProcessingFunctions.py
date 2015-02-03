@@ -37,7 +37,7 @@ def listener(name, q, outPath, outFilename):
             
     outcsv.flush()
     outcsv.close()
-    
+
 def cloudWorker(args):
     
     key, q_result, q_error = args
@@ -46,7 +46,7 @@ def cloudWorker(args):
     if isValid:
         process_name = mp.current_process().name
         print '%s (%d KB)is classified by %s' %(key.name, key.size, process_name) ####
-        imageFormat = key.name.split('.')[1]
+        imageFormat = key.name.split('.')[-1]
         try:
             # Load Image
             if imageFormat in ['tif', 'tiff']:
@@ -85,3 +85,29 @@ def localWorker(args):
         y_pred, y_proba = Clf.predict(X)
         # Write back to queue
         q_result.put(zip(fname, y_pred, y_proba))
+        
+        
+def cloudDimWorker(args):
+    
+    key, q_result, q_error = args
+    
+    isValid, keyname = cIL.isKeyValidImageFormat(key)
+    if isValid:
+        process_name = mp.current_process().name
+        print '%s (%d KB)is classified by %s' %(key.name, key.size, process_name) ####
+        imageFormat = key.name.split('.')[-1]
+        try:
+            # Load Image
+            if imageFormat in ['tif', 'tiff']:
+                img = CloudImageLoader.keyToValidImageOnDisk(key, process_name)
+            else:
+                img = CloudImageLoader.keyToValidImage(key)
+        
+            imDim = img.shape
+            del img
+#             q_result.put((imData,imDim))
+            result = zip([key.name], [imDim[0]], [imDim[1]])
+            q_result.put(result)
+#             q_result.put([key.name, y_pred, y_proba])
+        except:
+            q_error.put(zip([key.name, key.size]))

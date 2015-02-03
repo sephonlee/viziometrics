@@ -240,7 +240,7 @@ class SVMClassifier:
                 clfPath = Opt.svmModelPath
             try:     
                 clfPath = os.path.join(clfPath, 'SVMModel.pkl')
-                print 'Load classifier from', clfPath
+                print 'Loading classifier from', clfPath
                 self.classifier = joblib.load(clfPath)
                 self.modelTrained = True
                 
