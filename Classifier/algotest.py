@@ -37,7 +37,7 @@ bucketList = bucket.list()
  
 ### Test Read into Disk and open by openCV
 # key = bucket.get_key('imgs/PMC100321_1471-2105-3-9-2.jpg') 
-key = bucket.get_key('imgs/PMC101383_1471-2164-3-8-1.jpg')
+key = bucket.get_key('imgs/PMC100357_1471-2164-3-4-6.jpg.jpg')
 img = keyToValidImageOnDisk(key, 'test2')
 plt.imshow(img, cmap = cm.Greys_r)
 plt.show()

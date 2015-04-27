@@ -5,8 +5,6 @@
 
 from Dictionary import *
 from Options import *
-# from DataManager import *
-# from MultiProcessingFunctions import *
 
 # SVM Classifier
 from sklearn.externals import joblib
@@ -14,12 +12,10 @@ from sklearn import svm
 from sklearn import cross_validation
 from sklearn import grid_search
 from sklearn import metrics
-# from cStringIO import StringIO
-import csv
-import itertools
-# from PIL import Image
 
-# import multiprocessing as mp
+# import csv
+# import itertools
+
 
 
 # This class needs a given path to dictionary
@@ -65,7 +61,7 @@ class FeatureDescriptor():
 
         bx, by = block
         Imx, Imy = Im.shape
-        colH = (Imx - bx + 1) * (Imx - bx + 1)
+        colH = (Imx - bx + 1) * (Imy - bx + 1)
         colW = bx * by 
         imCol = np.zeros((colH, colW))
         curCol = 0
@@ -143,7 +139,7 @@ class FeatureDescriptor():
         
 
     
-    def extractFeatures (self, X, subdivLevels = 1):
+    def extractFeatures(self, X, subdivLevels = 1):
         
         print 'Extracting feature vectors using centroid PatchSet...'
         startTime = time.time()
@@ -266,11 +262,6 @@ class SVMClassifier:
         if self.modelTrained:
             print 'Saving SVM model...'
             infoFilePath = os.path.join(path, 'SVMModelInfo')
-#             np.savez(infoFilePath,
-#                      classNames = self.classNames,
-#                      classIDs = self.classIDs
-#                      )
-
             clfFilePath = os.path.join(path, 'SVMModel.pkl') 
             joblib.dump(self.classifier, clfFilePath)
             
@@ -290,27 +281,25 @@ class SVMClassifier:
             confusionMat = np.asmatrix(confusionMat)
             
             allScores = metrics.precision_recall_fscore_support(y_test, y_pred, average=None)
-
             
             for j in range(1,3):
                 values = np.asmatrix(allScores[j]).T
                 confusionMat = np.hstack([confusionMat, values])
-            
+                   
             lastRow = np.hstack([allScores[0] ,[0, 0]])
             confusionMat = np.vstack([confusionMat, lastRow])
             confusionList = confusionMat.tolist()
             
-            firstCol = self.Opt.classNames[:]
+            firstCol = sorted(self.Opt.classNames[:])
             firstCol.append('precision')
             for i in range(0, len(confusionList)):
                 confusionList[i].insert(0, firstCol[i])
             
-            head = self.Opt.classNames[:]
+            head = sorted(self.Opt.classNames[:])
             head.insert(0, '')
             head.extend(['recall', 'f1_score'])
             
             confusionList.insert(0, head)
-            print confusionList
             
             Common.saveCSV(path, 'model_evaluation', confusionList)
             
@@ -376,13 +365,13 @@ class SVMClassifier:
             
         print 'Training Model...'
         startTime = time.time()
-#         self.classNames = classNames
+
         # Split into training and test set (e.g., 80/20)
         X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.25, random_state=0)
         
         # Choose estimator
-#         self.estimator = svm.SVC(kernel = 'linear', probability = True)
         self.estimator = svm.SVC(probability = True)
+#         self.estimator = svm.SVC(kernel = 'linear', probability = True)
         
         # Choose cross-validation iterator
         cv = cross_validation.ShuffleSplit(X_train.shape[0], n_iter=10, test_size=0.25, random_state=0)
@@ -391,10 +380,10 @@ class SVMClassifier:
         # Tune the hyperparameters
 #         gammas = np.logspace(-6, -1, 10)
 #         self.classifier = grid_search.GridSearchCV(estimator=self.estimator, cv=cv, param_grid=dict(gamma=gammas))
-        
-        tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
-        self.classifier = grid_search.GridSearchCV(estimator=self.estimator, cv=cv, param_grid=tuned_parameters)     
-        
+#         tuned_parameters = [{'kernel': ['rbf'], 'gamma': [0, 1e-3, 1e-4], 'C': [1, 10]},]
+#         tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
+        tuned_parameters = self.Opt.tuned_parameters 
+        self.classifier = grid_search.GridSearchCV(estimator = self.estimator, cv = cv, param_grid = tuned_parameters)     
         
         # Train the optimized model with the split training set
         self.classifier.fit(X_train, y_train)
@@ -412,7 +401,6 @@ class SVMClassifier:
         print "Tuned Model: 10-Fold cross-validation accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2)
         
         result = [['Cross-Validation', 'Full Data', 'Accuracy:', scores.mean(), scores.std()*2]]
-        
         Common.saveCSV(outModelPath, 'model_evaluation', result, mode = 'ab')
         
         endTime = time.time()

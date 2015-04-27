@@ -12,24 +12,84 @@ class ImageDataManager:
     classDataID = {}
     classDataName = {}
     
-    def __init__(self, localDataPath = None, connectToDB = False, db_info = None):
+    def __init__(self, connectToDB = False, db_info = None):
         
         if connectToDB & (db_info is not None):
             host = db_info['host']
             db_username = db_info['db_username']
             db_password = db_info['db_password']
             db_name = db_info['db_name']
+            
             self.loginDB(host, db_username, db_password, db_name)
             self.db_connected = True
-        elif localDataPath is not None:
-            self.localDataPath = localDataPath
+#         elif localDataPath is not None:
+#             self.localDataPath = localDataPath
         else:
             print 'Warning! Don\'t find any data support!'
             
     # login mysql
     def loginDB(self, host, db_username, db_password, db_name):
-        self.db = MySQLdb.connect("localhost","sephon","19831122","VizioMatrics" )
+        self.db = MySQLdb.connect(host, db_username, db_password, db_name)
     
+    @ staticmethod
+    def getDBInfoFromFile(path):
+        f = open(path, 'r')
+        db_info = { 'host': f.readline()[0:-1],
+                'db_username': f.readline()[0:-1],
+                'db_password': f.readline()[0:-1],
+                'db_name': f.readline()[0:-1]}
+        return db_info
+    
+    def getKeynamesByQuery(self, query):
+        cursor = self.db.cursor()
+        cursor.execute(query)
+        return cursor.fetchall()
+    
+    def getKeynames(self, formats = None, size_limit = None, offset = None):
+        cursor = self.db.cursor()
+        sql = "SELECT img_loc FROM keys"
+        
+        num_AND = 0
+        
+        if (formats is not None):
+            num_AND += 1
+        if (size_limit is not None):
+            num_AND += 1
+            
+        if num_AND >= 0:
+            sql = sql + " WHERE"
+        
+        if size_limit is not None:
+            sql = sql + " file_size <= %d" % size_limit
+            num_AND -= 1
+            if num_AND > 0:
+                sql += " AND"
+    
+        if formats is not None:
+            if len(formats) > 0:
+                substring = " ("
+            
+            for i, format in enumerate(formats):
+                if i == 0:
+                    substring += " format = '%s'" %format
+                else:
+                    substring += " OR format = '%s'" %format
+                    
+            if len(formats) > 0:
+                substring += ")"
+            
+            sql += substring
+            num_AND -= 1
+            
+            if num_AND > 0:
+                sql += " AND" 
+            
+                
+        if offset is not None:
+            sql += " OFFSET %d" % offset
+    
+        cursor.execute(sql)
+        return cursor.fetchall()
     
     @ staticmethod
     def extendPath(path, newFileName):
@@ -60,56 +120,26 @@ class ImageDataManager:
             print 'Given class_name not exist, class_name:', self.classDataName.keys()
 
     
-    def loadClassData(self):
-        # Load from DB
-        if self.db_connected:
-            cursor = self.db.cursor()
-            
-            sql = """SELECT *
-                     FROM Class
-                     """ 
-            cursor.execute(sql)
-            for c in cursor.fetchall():
-                self.classDataID[c[0]] = c[1]
-        # Load from local data
-        elif self.localDataPath is not None: 
-
-            path = os.path.join(self.localDataPath, 'class.pkl')
-            with open(path, 'rb') as infile:       
-                self.classDataID = pickle.load(infile)
-        else:
-            print 'No data source found.'
-        self.classDataName = {y:x for x,y in self.classDataID.iteritems()}
-    
-    # Read image and update image_path by image_id
-    @ staticmethod
-    def updateImagePath():
-        return
-    
-    # Read image from categorized directory and update isGroundTruth by image_id
-    @ staticmethod
-    def updateGroundTruthImageByCatDir():
-        return
-    
-    # Update ground-truth class_id by image_id
-    @ staticmethod
-    def updateGroundTruthImageClassByCarDir(image_id, class_id):
-        return
-    
-    # Update ground-truth subclass_id by image_id
-    @ staticmethod
-    def updateGroundTruthSubimageClassByCarDir(image_id, subclass_id):
-        return
-    
-    
-    @staticmethod
-    def updateClfImageClass(image_id, class_id):
-        return
-    
-    # Update ground-truth subclass_id by image_id
-    @staticmethod
-    def updateClfSubimageClass(image_id, class_id):
-        return
+#     def loadClassData(self):
+#         # Load from DB
+#         if self.db_connected:
+#             cursor = self.db.cursor()
+#             
+#             sql = """SELECT *
+#                      FROM Class
+#                      """ 
+#             cursor.execute(sql)
+#             for c in cursor.fetchall():
+#                 self.classDataID[c[0]] = c[1]
+#         # Load from local data
+#         elif self.localDataPath is not None: 
+# 
+#             path = os.path.join(self.localDataPath, 'class.pkl')
+#             with open(path, 'rb') as infile:       
+#                 self.classDataID = pickle.load(infile)
+#         else:
+#             print 'No data source found.'
+#         self.classDataName = {y:x for x,y in self.classDataID.iteritems()}
     
     # File format: paper_id_image_id.{png, jpg,....}
     @ staticmethod
@@ -125,32 +155,39 @@ class ImageDataManager:
 
 if __name__ == '__main__': 
     
-    print ImageDataManager.getIDsFromFilename('paper_49_image_31.jpg')
+#     print ImageDataManager.getIDsFromFilename('paper_49_image_31.jpg')
+#     
+    DBInfoPath = '/Users/sephon/Desktop/Research/VizioMetrics/db_info.txt'
+    db_info = ImageDataManager.getDBInfoFromFile(DBInfoPath)
     
-    dataPath = '/Users/sephon/Desktop/Research/VizioMetrics/DB/'
-    db_info = { 'host': 'localhost',
-                'db_username': 'sephon',
-                'db_password': 19831122,
-                'db_name': 'VizioMatrics'}
-    
-#     print db_info
-    IDM = ImageDataManager(localDataPath = dataPath, connectToDB = True, db_info = db_info)
-
+    print db_info
+    query = "select img_loc from keys_s3 WHERE key_size > 10000000 AND img_format = 'jpg'"
+    IDM = ImageDataManager(connectToDB = True, db_info = db_info)
+    print IDM.getKeynamesByQuery(query)
         
-    
-        
-        
-    db = MySQLdb.connect("localhost","sephon","19831122","VizioMatrics" )
-    cursor = db.cursor()
-    sql = """SELECT *FROM Class""" 
+#     host = 'ec2-54-175-101-195.compute-1.amazonaws.com'
+#     username = 'master'
+#     password = 'password'
+#     dbname = 'VizioMetrics'
+#          
+#          
+#     db = MySQLdb.connect(host, username, password, dbname)
+#     cursor = db.cursor()
+# #     sql = "SELECT * FROM image_info LIMIT 20"
+#     sql = "select * from keys_s3 WHERE key_size > 10000000 AND img_format = 'jpg'"
+# 
 #     print cursor.execute(sql)
-    
+# #     print cursor.fetchone()
+# #     
 #     data = cursor.fetchall()
+#     print data
 #     cursor.execute("SELECT * FROM ImageFileSource")
 #     print  cursor.fetchone()
 #     print  cursor.fetchone()
 #     print  cursor.fetchone()
 
-
-        
+#     test = 'test'
+#     sql += 'dddd%s' % test
+#     print sql
+#     print IDM.getKeynames(['jpg', 'tif'], 200, 123)
         

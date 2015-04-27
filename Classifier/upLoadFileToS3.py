@@ -12,7 +12,7 @@ CIL = CloudImageLoader(Opt)
 keyName = 'finalClass_10_31_2014.csv'
 keyPath = 'classification'
 filePath = '/Users/sephon/Desktop/Research/VizioMetrics/cloud_result/finalClass.csv'
-CIL.upLoadingFile(keyName, keyPath, filePath)
+CIL.upLoadingFileToPath(keyName, keyPath, filePath)
 
 # full_key_name = os.path.join(keyPath, keyName)
 # print full_key_name
@@ -22,6 +22,6 @@ CIL.upLoadingFile(keyName, keyPath, filePath)
 keyName = 'errorList_10_31_2014.csv'
 keyPath = 'classification'
 filePath = '/Users/sephon/Desktop/Research/VizioMetrics/cloud_result/finalError.csv'
-CIL.upLoadingFile(keyName, keyPath, filePath)
+CIL.upLoadingFileToPath(keyName, keyPath, filePath)
 
 

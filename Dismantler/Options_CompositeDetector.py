@@ -6,7 +6,7 @@ import datetime
 import csv
 
 # Class of all parameters
-class Option():
+class Option_CompositeDetector():
     def __init__(self, isTrain = False, isTest = False, isClassify = False):
         
         ## Mode
@@ -40,37 +40,23 @@ class Option():
 #         self.keyPath = '/home/ec2-user/VizioMetrics/keys.txt'
         self.host = 'escience.washington.edu.viziometrics'
 
-        ## DB Info
-        self.DBInfoPath = '/Users/sephon/Desktop/Research/VizioMetrics/db_info.txt'
-#         self.DBInfoPath = '/home/ec2-user/VizioMetrics/db_info.txt'
-
         ## Data Read Parameter
         self.finalDim = [128, 128, 1]    # Final image dimensions
         self.preserveAspectRatio = True
 #         self.Ntrain = 1                  #/ Number of training images per category
 #         self.Ntest = 1                   #/ Number of test images per category
         self.validImageFormat = ['jpg', 'tif', 'bmp', 'png', 'tiff']    # Valid image formats
-#         self.validImageFormat = ['tif', 'tiff']
-        self.validMinKeySize = 1000000000
-        self.classNames = ['equation', 'photo','scheme', 'table', 'visualization']
+        self.validMinKeySize = 100000000
+#         self.classNames = ['electrophoresis', 'equation', 'composite', 'photo','scheme', 'table', 'visualization']
 #         self.classNames = ['bar', 'boxplot', 'heatmap', 'line', 'pie', 'scatter']
-#         self.classNames = ['composite', 'single']
+        self.classNames = ['single', 'composite']
         self.classNames = sorted(self.classNames)
         self.classIDs = range(1, len(self.classNames)+1)        # Start from 1
         self.classInfo = dict(zip(self.classNames, self.classIDs))
         
-        
-        ## Dictionary Parameter
-        self.Npatches = 250000;             # Number of patches
-        self.Ncentroids = 200;              # Number of centroids
-        self.rfSize = 6;                    # Receptor Field Size (i.e. Patch Size)
-        self.kmeansIterations = 100         # Iterations for kmeans centroid computation
-        self.whitening = True               # Whether to use whitening
-        self.normContrast = True            # Whether to normalize patches for contrast
-        self.minibatch = True               # Use minibatch to train SVM 
-        self.MIN_PATCH_VAR = float(38)/255  # Minimum Patch Variance for accepting as potential centroid (empirically set to about 25% quartile of var)
-        self.MAX_TRY = 30                   # Maximum number of try to find a qualify patch from an image
-        self.kmeansIterations = 50
+        ## Descriptor Parameter
+        self.num_cut = 12
+        self.offset_dim = (400, 400)
         
         ## SVM Classifier Parameter
         
@@ -80,10 +66,10 @@ class Option():
             ## New Model Name
             self.modelName = 'nClass_%d_' % len(self.classNames)
             ## Corpus Path
-            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_sub"
-#             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124"
+            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/CNN/CNN_decomposite"
+#             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014"
             ## Model Saving Path
-            self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier"
+            self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler"
 #             self.modelSavingPath = "/home/ec2-user/VizioMetrics/Model/Classifier"
             ## New Model Path
             self.modelPath = Common.getModelPath(self.modelSavingPath, self.modelName)
@@ -91,7 +77,7 @@ class Option():
         ##### Testing ######
         if self.isTest:
             ## Model ID
-            self.modelName = 'nClass_5_2015-03-09_CPR'
+            self.modelName = 'nClass_4_2015-02-19_CPR'
             ## Model Saving Path
             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier'
 #             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Classifier'
@@ -114,7 +100,7 @@ class Option():
         if self.isClassify:
             ## Model ID
 #             self.modelName = 'nClass_6_2014-10-30'
-            self.modelName = 'nClass_5_2015-03-09_CPR'
+            self.modelName = 'nClass_4_2015-02-19_CPR'
             ## Model Saving Path
             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier'
 #             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Classifier'
