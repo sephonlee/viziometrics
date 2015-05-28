@@ -2,6 +2,7 @@ import os
 import tarfile
 import csv
 import re
+import shutil
 import xml.etree.ElementTree as ET
 from cStringIO import StringIO
 import multiprocessing as mp
@@ -21,7 +22,7 @@ def getTarFilesFromPah(path):
 
 
 def csvFigureSaver(csv_file_path, figure_data):
-    csv_file_path = os.path.join(csv_file_path, 'figure_info.csv')
+    csv_file_path = os.path.join(csv_file_path, 'pubmed_figure_caption_rest.csv')
     outcsv = open(csv_file_path, 'ab')
     row = figure_data
     writer = csv.writer(outcsv, dialect = 'excel')
@@ -34,15 +35,17 @@ def csvFigureSaver(csv_file_path, figure_data):
 
 
 def csvPaperSaver(csv_file_path, paper_data):
-    csv_file_path = os.path.join(csv_file_path, 'paper_info.csv')
+    csv_file_path = os.path.join(csv_file_path, 'pubmed_paper_info_rest.csv')
     outcsv = open(csv_file_path, 'ab')
     row = paper_data
     writer = csv.writer(outcsv, dialect = 'excel')
 #     for row in paper_data:
 #         print row
-    result = (row['pmcid'], row['pmid'], row['doi'], row['longname'], row['shortname'], row['title'], row['num_page'], row['year_pub'], row['month_pub'], row['day_pub'])
+
+    if row is not None:
+        result = (row['pmcid'], row['pmid'], row['doi'], row['longname'], row['shortname'], row['title'], row['num_page'], row['year_pub'], row['month_pub'], row['day_pub'])
 #         result = zip([row['pmcid']], y_pred, y_proba, [imageFormat], [imDim[0]], [imDim[1]], [key.size])
-    writer.writerow(result)
+        writer.writerow(result)
     outcsv.close()
     return
 
@@ -96,52 +99,57 @@ class TarParser():
         root = tree.getroot()
         paper_data = {}
         figure_data = []
-        paper_data['doi'] = None
-        paper_data['pmid'] = None
-        paper_data['pmcid'] = None
-        paper_data['title'] = None
-        paper_data['num_page'] = 0
-        paper_data['publisher-id'] = None
-        paper_data['day_pub'] = 0
-        paper_data['year_pub'] = 0
-        paper_data['month_pub'] = 0
-        paper_data['longname'] = None
-        paper_data['shortname'] = None
+        paper_data['doi'] = '\N'
+        paper_data['pmid'] = '\N'
+        paper_data['pmcid'] = '\N'
+        paper_data['title'] = '\N'
+        paper_data['num_page'] = '\N'
+        paper_data['publisher-id'] = '\N'
+        paper_data['day_pub'] = '\N'
+        paper_data['year_pub'] = '\N'
+        paper_data['month_pub'] = '\N'
+        paper_data['longname'] = '\N'
+        paper_data['shortname'] = '\N'
         
         # find publisher
         n = root.findall('.//journal-title')
-        if n:
-            paper_data['longname'] = TarParser.replaceUnicodeChar(repr(n[0].text))
+        if n and n[0].text is not None:
+            paper_data['longname'] = TarParser.replaceUnicodeChar(n[0].text.encode('utf-8'))
         
         n = root.findall('.//journal-id')
-        if n:
-            paper_data['shortname'] = TarParser.replaceUnicodeChar(repr(n[0].text))
+        if n and n[0].text is not None:
+            paper_data['shortname'] = TarParser.replaceUnicodeChar(n[0].text.encode('utf-8'))
         
         # paper title
         n = root.findall('.//article-title')
-        if n:
-            paper_data['title'] = TarParser.replaceUnicodeChar(repr(n[0].text))
+        if n :
+            if n[0].text is not None:
+                paper_data['title'] = TarParser.replaceUnicodeChar(n[0].text.encode('utf-8'))
         
         # find pub-id
         for n in root.findall('.//article-id'):  
             if n.attrib:
                 att = n.attrib[n.attrib.keys()[0]]
                 if att == 'pmc':
-                    paper_data['pmcid'] = n.text
+                    pmcid = n.text
+                    if pmcid[0:3].lower() == 'pmc':
+                        paper_data['pmcid'] = pmcid[3:]
+                    else:
+                        paper_data['pmcid'] = n.text
                 else:
                     paper_data[att] = n.text
            
         # pub date
         n = root.findall('.//pub-date//year')
-        if n:
+        if n and n[0].text is not None:
             paper_data['year_pub'] = n[0].text
         
         n = root.findall('.//pub-date//day')
-        if n:
+        if n and n[0].text is not None:
             paper_data['day_pub'] = n[0].text
         
         n = root.findall('.//pub-date//month')
-        if n :
+        if n and n[0].text is not None:
             paper_data['month_pub'] = n[0].text
          
         for n in root.findall('.//fig'):
@@ -150,12 +158,14 @@ class TarParser():
             
             # id
             fig_info['id'] = n.attrib['id']
-    
             # image_id
             g = n.findall('.//graphic')
             if g:
                 att = g[0].attrib[g[0].attrib.keys()[0]]
-                fig_info['img_id'] = 'PMC' + paper_data['pmcid'] + '_' + att + '.' + file_dic[att]
+                try:
+                    fig_info['img_id'] = 'PMC' + paper_data['pmcid'] + '_' + att + '.' + file_dic[att]
+                except:
+                    print 'Do not find the images in the tarfile'
             
             # paper_id
             fig_info['pmcid'] = paper_data['pmcid']
@@ -163,9 +173,14 @@ class TarParser():
             # caption
             caption_nodes = n.findall('.//caption')
             if caption_nodes:
-                fig_info['caption'] = TarParser.getFullCaptionContent(caption_nodes[0])
+                caption = TarParser.getFullCaptionContent(caption_nodes[0])
+                caption = caption.replace("'", '"').strip()
+                if len(caption) > 0 and caption[0] == '"':
+#                     print caption
+                    caption = caption[2:-1]
+                fig_info['caption'] = caption
             else:
-                fig_info['caption'] = ''
+                fig_info['caption'] = '\N'
             
             figure_data.append(fig_info)
         
@@ -203,11 +218,20 @@ class TarParser():
     
     @ staticmethod
     def replaceUnicodeChar(string):
-        string = string.replace('u\'' ,'')
-        string = re.sub('\W(.\w+)\d.|\W(u\w+)\d', '', string)
-        string = re.sub('.\W(\w+)\d.|\W(u\w+)\d', '', string)
-        string = string.replace('\'' ,'')
-        return string
+        try:
+            string = string.decode('unicode_escape').encode('ascii','ignore')
+    #         string = string.encode('utf-8')
+            string = re.sub(r'\s+', ' ', string)
+    #         except:
+    #             string = repr(string)
+    #         string = " ".join(string.split())
+    #         string = string.replace('u\'' ,'')
+    #         string = re.sub('\W(.\w+)\d.|\W(u\w+)\d', '', string)
+    #         string = re.sub('.\W(\w+)\d.|\W(u\w+)\d', '', string)
+    #         string = string.replace('\'' ,'')
+            return string
+        except:
+            return '[unknown char]'
     
     
     @ staticmethod
@@ -221,12 +245,13 @@ class TarParser():
     @ staticmethod
     def getFullCaptionContent_help(node, str_buff):
         if node.text is not None:
-            string = TarParser.replaceUnicodeChar(repr(node.text))
+            string = TarParser.replaceUnicodeChar(node.text.encode('utf-8'))
             str_buff.write(string)
         for child in node.getchildren():
             TarParser.getFullCaptionContent_help(child, str_buff)
         if node.tail is not None:
-            string = TarParser.replaceUnicodeChar(repr(node.tail))
+            string = TarParser.replaceUnicodeChar(node.tail.encode('utf-8'))
+            #repr not used anymore
             str_buff.write(string)
         return str_buff
     
@@ -248,8 +273,11 @@ class TarParser():
         extracted_file_path, file_dic, save_path = TarParser.extractFileFromTarFile(file_path, tmp_save_path)
         if 'nxml' in extracted_file_path:
             paper_data, figure_data = TarParser.getInfo(extracted_file_path, file_dic, save_path)
-        if 'nxml' in extracted_file_path or len(extracted_file_path['pdf']) > 0:
-            TarParser.delTmpFiles(extracted_file_path, save_path)
+#         if 'nxml' in extracted_file_path or len(extracted_file_path['pdf']) > 0:
+#             TarParser.delTmpFiles(extracted_file_path, save_path)
+#         print 'save paht', save_path, os.path.isfile(save_path)
+        if os.path.isdir(save_path):
+            shutil.rmtree(save_path)
         return paper_data, figure_data
     
     
@@ -263,31 +291,33 @@ class TarParser():
     
 if __name__ == '__main__':  
 #     tar_file_path = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Source_paper/'
-    tar_file_path = '/Users/sephon/Desktop/Research/ReVision/source_papers/Pubmed/ee'
+    tar_file_path = '/Users/sephon/Documents/workspace/VizClassification/FileTransmitter/tmp'
     tmp_save_path = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Source_paper/temp'
-    csv_path = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
+    csv_path = '/Users/sephon/Desktop/Research/VizioMetrics/cloud_result/caption'
     tar_file_list = getTarFilesFromPah(tar_file_path)
-    tar_file_list.remove('/Users/sephon/Desktop/Research/ReVision/source_papers/Pubmed/ee/4d/PLoS_Genet_2012_Apr_12_8(4)_e1002626.tar.gz')
+#     tar_file_list.remove('/Users/sephon/Desktop/Research/ReVision/source_papers/Pubmed/ee/4d/PLoS_Genet_2012_Apr_12_8(4)_e1002626.tar.gz')
     
-    outcsv = open(os.path.join(csv_path, 'paper_info.csv'), 'wb')
-    writer = csv.writer(outcsv, dialect = 'excel')
-    header = ['pmcid', 'pmid', 'doi', 'longname', 'shortname', 'title', 'num_page', 'year_pub', 'month_pub', 'day_pub']
-    writer.writerow(header)
-    outcsv.close()
-    
-    outcsv = open(os.path.join(csv_path, 'figure_info.csv'), 'wb')
-    writer = csv.writer(outcsv, dialect = 'excel')
-    header = ['img_id', 'pmcid', 'caption']
-    writer.writerow(header)
-    outcsv.close()
+#     outcsv = open(os.path.join(csv_path, 'pubmed_paper_info_rest.csv'), 'wb')
+#     writer = csv.writer(outcsv, dialect = 'excel')
+#     header = ['pmcid', 'pmid', 'doi', 'longname', 'shortname', 'title', 'num_page', 'year_pub', 'month_pub', 'day_pub']
+#     writer.writerow(header)
+#     outcsv.close()
+#     
+#     outcsv = open(os.path.join(csv_path, 'pubmed_figure_caption_rest.csv'), 'wb')
+#     writer = csv.writer(outcsv, dialect = 'excel')
+#     header = ['img_id', 'pmcid', 'caption']
+#     writer.writerow(header)
+#     outcsv.close()
          
-    for file_path in tar_file_list:
-        print file_path
+    for i, file_path in enumerate(tar_file_list):
+        print i, file_path
         paper_data, figure_data = TarParser.extractInfo(file_path, tmp_save_path)
-        csvPaperSaver(csv_path, paper_data)
-        csvFigureSaver(csv_path, figure_data)
+        if paper_data is not None:
+            csvPaperSaver(csv_path, paper_data)
+        if figure_data is not None:
+            csvFigureSaver(csv_path, figure_data)
     
-#     file_path = '/Users/sephon/Desktop/Research/ReVision/source_papers/Pubmed/ee/bb/PLoS_One_2009_Jul_16_4(7)_e6237.tar.gz'
+#     file_path = '/Users/sephon/Documents/workspace/VizClassification/FileTransmitter/tmp/Clin_Oral_Investig_2012_Feb_2_16(1)_109-115.tar.gz'
 #     paper_data, figure_data = TarParser.extractInfo(file_path, tmp_save_path)
 #     csvFigureSaver(csv_path, figure_data)
 #     print paper_data

@@ -342,14 +342,17 @@ class Dismantler:
     isPreClassified = False
     isMakeTrainingImage = False
     
-    def __init__(self, Opt):
+    def __init__(self, Opt, auxClfPath = None):
         self.Opt = Opt
         self.isPreClassified = Opt.isPreClassified
-        self.loadSVMClassifier()
+        self.loadSVMClassifier(auxClfPath)
             
-    def loadSVMClassifier(self):
+    def loadSVMClassifier(self, auxClfPath):
         try:
-            self.Classifier = SubImageClassifier(self.Opt, isTrain= False, clfPath = self.Opt.svmModelPath)
+            if auxClfPath is not None:
+                self.Classifier = SubImageClassifier(self.Opt, isTrain= False, clfPath = auxClfPath)
+            else:
+                self.Classifier = SubImageClassifier(self.Opt, isTrain= False, clfPath = self.Opt.svmModelPath)
             print 'SubImage Classifier ready. \n'
         except:
             print 'Require valid sub-image classifier. \n'          
@@ -537,6 +540,18 @@ class Dismantler:
                  
         return root, fire_lane_map
     
+    
+    def getEffectiveRegionMask(self):
+        
+        if len(img.shape) == 3:
+            img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+            
+        first_vertical, fire_lane_map_vertical, count_standalone_first_vertical = self.split(img, 0)
+        first_horizontal, fire_lane_map_horizontal, count_standalone_first_horizontal = self.split(img, 1)
+        mask = fire_lane_map_vertical + fire_lane_map_horizontal
+        mask = np.divide(map, np.max(map)) * 255
+        return mask
+            
     # return a list of node showing the final segmentation
     def dismantle(self, img):
         

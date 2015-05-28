@@ -884,7 +884,7 @@ class VizClassifier():
             p_invalid.join()
             
             'All cloud images (%d) were classified' % num_keys
-            
+        
     def classifyCloudSubImagesParallelDB(self, query, keyPath = None, host = None, DBInfoPath = None):
         if self.Classifier is not None:
             try:

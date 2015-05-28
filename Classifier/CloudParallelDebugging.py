@@ -158,22 +158,24 @@ def localWorker(Opt, FD, Clf, fname, q_result, q_error):
 # keyname = 'imgs/PMC3898118_onc2012600x1.tif'
 # keyname = 'imgs/PMC2358978_pone.0002093.s003.tif'
 # keyname = 'imgs/PMC1033567_medhist00152-0104.tif'
-keyname = 'imgs/PMC1033587_medhist00151-0069&copy.jpg'
+# keyname = 'imgs/PMC1033587_medhist00151-0069&copy.jpg'
+keyname= 'tarfiles/Neurochem_Res_2009_Aug_28_34(8)_1522.tar.gz'
 # keyname = 'imgs/PMC1994591_pone.0001006.s001.tif,527743'
 key = bucket.get_key(keyname)
-imgStringData = key.get_contents_as_string()
-# cv
-nparr = np.fromstring(imgStringData, np.uint8)
-img_np = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
-
-
-print cIL.isKeyValidImageFormat(key)
-
 print key.size
-print img_np.shape
-print img_np.dtype
-plt.imshow(img_np, interpolation = 'bicubic')
-plt.show()
+# imgStringData = key.get_contents_as_string()
+# cv
+# nparr = np.fromstring(imgStringData, np.uint8)
+# img_np = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
+
+
+# print cIL.isKeyValidImageFormat(key)
+# 
+# print key.size
+# print img_np.shape
+# print img_np.dtype
+# plt.imshow(img_np, interpolation = 'bicubic')
+# plt.show()
 # cv.imwrite('/Users/sephon/Desktop/Research/VizioMetrics/test_ori.tif', img_np)
 # 
 # cv.imwrite('/Users/sephon/Desktop/Research/VizioMetrics/test_ori.jpg', img_np, [cv.IMWRITE_JPEG_QUALITY, 100])
