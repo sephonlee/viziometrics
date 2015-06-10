@@ -9,12 +9,14 @@ import matplotlib.ticker as mtick
 ###
 file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figures_paper_composite.csv'
 num_bin = 100
-### Line 25,26, Filter Papers
-### Line 30, Change numerator
-### Line 35, Change numerator
-### Line 67-76, Resort if any demand
-### Line 116,117, Assign x,y variables to plot scatter
-### Line 137,138, Assign x,y variables to plot barchart
+### /var/www/html/DB/figures_paper_composite.sql --> For all papers
+### /var/www/html/DB/topic_ef_figure.sql  --> Select Topics
+### Line 27,28, Filter Papers
+### Line 32, Change numerator
+### Line 37, Change numerator
+### Line 69-78, Resort if any demand
+### Line 118,119, Assign x,y variables to plot scatter
+### Line 139,140, Assign x,y variables to plot barchart
 
 data = []
 with open(file_name ,'rb') as incsv:
