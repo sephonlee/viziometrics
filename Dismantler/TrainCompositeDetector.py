@@ -12,22 +12,6 @@ import cv2 as cv
 import numpy as np
 
 
-# def getImageFeatureFromImagePath(fileList, finalDim):
-#     
-#     data = np.zeros([len(fileList), finalDim[0] * finalDim[1]])
-# 
-#     for (i,filename) in enumerate(fileList):
-#         
-#         img = cv.imread(filename)
-#         if len(img.shape) == 3:
-#             img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-# 
-#         img = cv.resize(img, finalDim)
-#         data[i, :] = np.reshape(img, (1, finalDim[0]* finalDim[1]), 'F')
-#         
-#     print '%d images has been collected.' %len(fileList)
-#     return data
-
 def normalizeAndWhiten(A):
                 
     pM = np.asmatrix(np.mean(A, axis=1)).T
@@ -108,7 +92,7 @@ def getFeatureByFireLaneFromFileList(CID, fileList):
     
 
 
-def getFeatureByFireLaneMapFromFileList(CID, fileList):
+def getFeatureByFireLaneMapFromFileList(CID, fileList, showStatus = True):
     
     Opt_Dmtler = Option_Dismantler(isTrain = False)
     Dmtler = Dismantler(Opt_Dmtler)
@@ -129,7 +113,8 @@ def getFeatureByFireLaneMapFromFileList(CID, fileList):
         
         data[i, :] = CID.getFeatureByFireLaneMap(map)
         
-        print '%d / %d images has been collected' %(i, len(fileList))
+        if showStatus:
+            print '%d / %d images has been collected' %(i, len(fileList))
         
     print '%d images has been collected.' %len(fileList)
     return data
@@ -154,9 +139,9 @@ def getTrainImageAverageDim(filenames_array):
 if __name__ == '__main__':
     
     
-    Opt_dmtler = Option_CompositeDetector(isTrain = True)
-    ImgLoader = ImageLoader(Opt_dmtler)
-    CID = CompositeImageDetector(Opt_dmtler)
+    Opt_CID = Option_CompositeDetector(isTrain = True)
+    ImgLoader = ImageLoader(Opt_CID)
+    CID = CompositeImageDetector(Opt_CID)
     
 #     print finalDim
 #     singleImageFileList = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_single_composite/single"

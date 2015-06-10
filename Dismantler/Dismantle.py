@@ -27,6 +27,10 @@ startTime = time.time()
 countSingle = 0
 countMulti = 0
 
+countSplitTime = 0
+countMergeTime = 0
+countSelectTime = 0
+
 for dirPath, dirNames, fileNames in os.walk(corpusPath):   
     for f in fileNames:
         fname, suffix = Common.getFileNameAndSuffix(f)
@@ -40,16 +44,31 @@ for dirPath, dirNames, fileNames in os.walk(corpusPath):
             
             if len(img.shape) == 3:
                 img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        
-            first_vertical, count_standalone_vertical = Dmtler.split(img, 0)
-            first_horizontal, count_standalone_horizontal = Dmtler.split(img, 1)
-    
+                
+            subStartTime = time.time()
             
+            first_vertical, fire_lane_map_vertical, count_standalone_vertical = Dmtler.split(img, 0)
+            first_horizontal, fire_lane_map_horizontal, count_standalone_horizontal = Dmtler.split(img, 1)
+    
+            spendTime = time.time()
+            countSplitTime += spendTime - subStartTime
+            subStartTime = spendTime
+            print countSplitTime
 #             print count_standalone_vertical, count_standalone_horizontal
             first_vertical = Dmtler.merge(img, first_vertical)
             first_horizontal = Dmtler.merge(img, first_horizontal)
-        
+            
+            spendTime = time.time()
+            countMergeTime += time.time() - subStartTime
+            subStartTime = spendTime
+            print countMergeTime
+            
             final_result = Dmtler.select(img, first_vertical, first_horizontal)
+            
+            spendTime = time.time()
+            countSelectTime += time.time() - subStartTime
+            subStartTime = spendTime
+            print countSelectTime
             
             if len(final_result) <= 1:
                 countSingle += 1
@@ -58,7 +77,7 @@ for dirPath, dirNames, fileNames in os.walk(corpusPath):
             
             
 #             Dmtler.showSegmentationByList(img, node_list)
-            Dmtler.saveSegmentationLayoutByList(img, final_result, resultPath, fname)
+#             Dmtler.saveSegmentationLayoutByList(img, final_result, resultPath, fname)
             
             nImageAll += 1 
             if nImageAll % 100 == 0:
@@ -68,3 +87,7 @@ costTime = time.time() - startTime
 print 'All %d images were classified and saved in %s within %d sec.' % (nImageAll, resultPath, costTime) 
 
 print float(countSingle)/nImageAll
+
+print "splitTime = %f, avg = %f" %(countSplitTime, float(countSplitTime)/ nImageAll)
+print "mergeTime = %f, avg = %f" %(countMergeTime, float(countMergeTime)/ nImageAll)
+print "selectTime = %f, avg = %f" %(countSelectTime, float(countSelectTime)/ nImageAll)

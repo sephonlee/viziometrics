@@ -400,7 +400,7 @@ def cloudDismentleWorkerDB(args):
                                 str(node.info['start'][1]) + ':' + \
                                 str(node.info['end'][0]) + ':' + \
                                 str(node.info['end'][1])
-                sub_image_id = key.name[0:-len(imageFormat)-1] + '_' + str(i)
+                sub_image_id = key.name[0:-len(imageFormat)-1] + '_composite_' + str(i)
                 
                 
                 key_names.append(key.name)

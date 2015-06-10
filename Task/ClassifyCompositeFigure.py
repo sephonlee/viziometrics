@@ -47,8 +47,8 @@ def worker(args):
             # Load Image
             img = CloudImageLoader.keyToValidImage(key)
             
-            DMTLER.getEffectiveRegionMask(img)
-            classname, prob = CPSD.getClassAndProabability(map)
+            mask = DMTLER.getEffectiveRegionMask(img)
+            classname, prob = CPSD.getClassAndProabability(mask)
             
             image_id = key.name.split('/')[-1]
             paper_id = image_id.split('_')[0][3:]
@@ -56,7 +56,7 @@ def worker(args):
             is_composite = False
             if classname[0] == 'composite':
                 is_composite = True
-
+    
             result = zip([image_id], [paper_id], [key.name], [is_composite], prob)
             print result
             q_result.put(result)
@@ -90,14 +90,14 @@ def classifyCompositeFigure(query):
     output_id = hash(query) / 10000000000000
     
     # Result Out
-    header = ['img_id', 'paper_id', 'img_loc', 'is_composite']    
+    header = ['img_id', 'paper_id', 'img_loc', 'is_composite', 'probability']    
     csvSavingPath = Class_Classifier_Opt.resultPath
     csvFilename = 'composite_result_parallel_%s' % output_id
     DataFileTool.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
     q_result = manager.Queue() 
     p_result = mp.Process(target = listener, args=('Result', q_result, csvSavingPath, csvFilename))
     p_result.start()
-            
+             
     # Error Out
     header = ['img_id', 'file_size']
     csvSavingPath = Class_Classifier_Opt.resultPath
@@ -106,7 +106,7 @@ def classifyCompositeFigure(query):
     q_error = manager.Queue() 
     p_error = mp.Process(target = listener, args=('Error', q_error, csvSavingPath, csvFilename))
     p_error.start()
-    
+     
     # Invalid Out
     header = ['img_id', 'file_size']
     csvSavingPath = Class_Classifier_Opt.resultPath
@@ -115,7 +115,7 @@ def classifyCompositeFigure(query):
     q_invalid = manager.Queue() 
     p_invalid = mp.Process(target = listener, args=('Result', q_invalid, csvSavingPath, csvFilename))
     p_invalid.start()
-                
+                 
     pool = mp.Pool(processes = mp.cpu_count() + 2)
     print 'CPU count: %d' % mp.cpu_count()
     
@@ -124,7 +124,6 @@ def classifyCompositeFigure(query):
     key_list = IDM.getKeynamesByQuery(query)
     num_keys = len(key_list)
     endTime = time.time()
-    print key_list
     print num_keys, 'keys were collected in ', endTime - startTime, 'sec'
     
     # Pooling
@@ -134,7 +133,7 @@ def classifyCompositeFigure(query):
     # Terminate processes
     endTime = time.time()
     print 'All images were classified in', endTime - startTime, 'sec.\n'
-     
+      
     q_result.put('kill')
     q_error.put('kill')
     q_invalid.put('kill')
@@ -148,6 +147,6 @@ def classifyCompositeFigure(query):
 
 if __name__ == '__main__':
     
-    query = "select img_loc from keys_s3 WHERE img_format = 'jpg' LIMIT 100"
+    query = "SELECT img_loc FROM s3_readable_keys WHERE is_readable is null AND img_format = 'jpg' limit 3000000 offset 200000"
     classifyCompositeFigure(query)
     

@@ -137,7 +137,67 @@ class FeatureDescriptor():
         else:
             print 'FSMean and FSSd are not available, please trained model first'
         
+        
+    def extractFeaturesPlus(self, X, subdivLevels = 1):
+        print 'Extracting feature vectors using centroid PatchSet and effective region mask...'
+        startTime = time.time()
+        
+        Nimages = X.shape[0]
 
+        cc = np.asmatrix(np.sum(np.power(self.centroids,2), axis = 1).T)
+        sz = self.finalDim[0] * self.finalDim[1]
+
+        XC = np.zeros((Nimages, (4**subdivLevels)*self.Ncentroids))
+        
+        
+        for i in range(0, Nimages):
+            
+            if np.mod(i, 100) == 0:
+                print 'Extracting features:', i, '/', Nimages
+
+            ps = FeatureDescriptor.im2col(np.reshape(X[i,0:sz], self.finalDim[0:2], 'F'), (self.rf, self.rf))
+            ps = np.divide(ps - np.mean(ps, axis = 1), np.sqrt(np.var(ps, axis = 1) +1))
+            if self.whitening:
+                ps = np.dot((ps - self.M), self.P)
+
+            xx = np.sum(np.power(ps, 2), axis = 1)
+            xc = np.dot(ps, self.centroids.T)
+            z = np.sqrt(cc + xx - 2*xc)
+
+            v = np.min(z, axis = 1)
+            inds = np.argmin(z, axis = 1)#
+            mu = np.mean(z, axis = 1)
+            ps = mu - z
+            ps[ps < 0] = 0
+#             print 'there'
+            off = np.asmatrix(range(0, (z.shape[0])*self.Ncentroids, self.Ncentroids))
+            ps = np.zeros((ps.shape[0]*ps.shape[1],1))
+            ps[off.T + inds] = 1
+            ps = np.reshape(ps, (z.shape[1],z.shape[0]), 'F').T#
+
+                
+            prows = self.finalDim[0] - self.rf + 1
+            pcols = self.finalDim[1]- self.rf + 1
+            ps = np.reshape(ps, (prows, pcols, self.Ncentroids), 'F')
+                
+            XC[i, :] = FeatureDescriptor.subdivPooling(ps, subdivLevels).T
+            
+        print 'Extracting features:', i+1, '/', Nimages    
+        endTime = time.time()
+        print X.shape[0], 'feature vectors computed in', endTime-startTime, 'sec\n'
+        
+        if self.unTrained:
+            print 'Updated dictionary....'
+            self.FSMean = np.mean(XC, axis = 0)
+            self.FSSd = np.sqrt(np.var(XC, axis = 0) + 0.01)
+            self.saveDictionaryToFile() 
+        else:
+            print 'Normalized by trained features'
+            
+        XCs = np.divide(XC - self.FSMean, self.FSSd)
+            
+        return XCs
+    
     
     def extractFeatures(self, X, subdivLevels = 1):
         

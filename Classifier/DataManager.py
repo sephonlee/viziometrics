@@ -1,6 +1,9 @@
 # Class to load images
 # 1. CloadImageLoader: Load images from s3 server. Usually for testing and classification
 # 2. ImageLoader: Load images from local disk. Usually for training 
+import sys
+sys.path.append("..")
+from DataFileTool.DataFileTool import *
 
 import time
 import os, errno
@@ -211,7 +214,7 @@ class ImageLoader():
         saveContent = zip(fileNamesInClass, allClassNames)
         csvFileName = mode + '_image_files'
         header = ['file_path', 'class_name']
-        Common.saveCSV(outPath, csvFileName, saveContent, header)
+        DataFileTool.saveCSV(outPath, csvFileName, saveContent, header)
 
         # output
         return allImData, allLabels, allClassNames, localClassDirs
@@ -371,7 +374,7 @@ if __name__ == '__main__':
 
     Opt = Option(isTrain = True)
     modelPath = Opt.modelPath
-    Opt.saveSetting(modelPath)
+#     Opt.saveSetting(modelPath)
     
     ImgLoader = ImageLoader(Opt)
     allImData, allLabels, allCatNames, newClassNames = ImgLoader.loadTrainDataFromLocalClassDir(Opt.trainCorpusPath, modelPath)      

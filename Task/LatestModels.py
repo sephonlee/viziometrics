@@ -20,7 +20,7 @@ if EC2:
     # Model Path
     CCLF_PATH = '/home/ec2-user/VizioMetrics/Model/Classifier/nClass_5_2015-03-09_CPR'
     DMTLER_PATH = '/home/ec2-user/VizioMetrics/Model/Dismantler/dismantler_matsplit_matsvm_ceil'
-    CPSD_PATH = '/home/ec2-user/VizioMetrics/Model/Classifier/composite_detector_firelanema'
+    CPSD_PATH = '/home/ec2-user/VizioMetrics/Model/Dismantler/composite_detector_firelanemap'
     
     # Data Path
     KEYPATH = '/home/ec2-user/VizioMetrics/keys.txt'

@@ -36,8 +36,8 @@ class Option_CompositeDetector():
         self.tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
 
         ## S3 Data Read Parameter
-        self.keyPath = '/Users/sephon/Desktop/Research/VizioMetrics/keys.txt'
-#         self.keyPath = '/home/ec2-user/VizioMetrics/keys.txt'
+#         self.keyPath = '/Users/sephon/Desktop/Research/VizioMetrics/keys.txt'
+        self.keyPath = '/home/ec2-user/VizioMetrics/keys.txt'
         self.host = 'escience.washington.edu.viziometrics'
 
         ## Data Read Parameter

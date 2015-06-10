@@ -57,23 +57,27 @@ class CompositeImageDetector():
     def __init__(self, Opt, modelPath = None):
         self.Opt = Opt
         if modelPath is None:
-            self.modelPath = Opt.modelPath
-            self.num_cut = Opt.num_cut
-            self.offset_dim = Opt.offset_dim
-            self.thresholds = Opt.thresholds
-            self.division = Opt.division
+            self.modelPath = Opt.modelPath 
+        else:
+            self.modelPath = modelPath
+            
+        self.num_cut = Opt.num_cut
+        self.offset_dim = Opt.offset_dim
+        self.thresholds = Opt.thresholds
+        self.division = Opt.division
         
         self.loadSVMClassifier()
         self.loadDescriptorParams()
             
     def loadSVMClassifier(self):
         try:
-            self.Classifier = SubImageClassifier(self.Opt, isTrain= False, clfPath = self.Opt.modelPath)
+            self.Classifier = SubImageClassifier(self.Opt, isTrain= False, clfPath = self.modelPath)
             print 'SubImage Classifier ready. \n'
         except:
             print 'Require valid sub-image classifier. \n'  
     
     def loadDescriptorParams(self):
+        print os.path.join(self.modelPath, 'descriptorParam.npz')
         try:
             path = os.path.join(self.modelPath, 'descriptorParam.npz')
             dictionary = np.load(path)
@@ -192,8 +196,8 @@ class CompositeImageDetector():
         return feature
 
     @ staticmethod
-    def whiten(X):
-        X = np.dot((X - self.M), self.P)
+    def whiten(X, M, P):
+        X = np.dot((X - M), P)
     
 
 
@@ -541,7 +545,7 @@ class Dismantler:
         return root, fire_lane_map
     
     
-    def getEffectiveRegionMask(self):
+    def getEffectiveRegionMask(self, img):
         
         if len(img.shape) == 3:
             img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
@@ -549,7 +553,7 @@ class Dismantler:
         first_vertical, fire_lane_map_vertical, count_standalone_first_vertical = self.split(img, 0)
         first_horizontal, fire_lane_map_horizontal, count_standalone_first_horizontal = self.split(img, 1)
         mask = fire_lane_map_vertical + fire_lane_map_horizontal
-        mask = np.divide(map, np.max(map)) * 255
+        mask = np.divide(mask, np.max(mask)) * 255
         return mask
             
     # return a list of node showing the final segmentation
@@ -1332,12 +1336,13 @@ if __name__ == '__main__':
     first_horizontal, fire_lane_map_horizontal, count_standalone_first_horizontal = Dmtler.split(img, 1)
     map = fire_lane_map_vertical + fire_lane_map_horizontal
     map = np.divide(map, np.max(map)) * 255
-#     cv.imwrite('/Users/sephon/Desktop/Research/VizioMetrics/image_5752_firelane_map.jpg', map)
+    cv.imwrite('/Users/sephon/Desktop/Research/VizioMetrics/image_5752_firelane_map.jpg', map)
         
     Dmtler.showImg(map)
         
     Opt_CD = Option_CompositeDetector(isTrain = False)
     CID = CompositeImageDetector(Opt_CD)
+#     map = Dmtler.getEffectiveRegionMask(img)
     classname, prob = CID.getClassAndProabability(map)
     print classname
     print prob
