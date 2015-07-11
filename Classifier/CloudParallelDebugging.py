@@ -19,6 +19,10 @@ import multiprocessing as mp
 # from MultiProcessingFunctions import *
 
 
+sys.path.append("..")
+from Dismantler.Options_Dismantler import *
+from Dismantler.Dismantler import *
+
 def isKeyValidImageFormat(Opt, key):
     keyname =  key.name.split('.')
     if len(keyname) == 2:
@@ -154,7 +158,9 @@ def localWorker(Opt, FD, Clf, fname, q_result, q_error):
 
 
 #### Test s3 image
-keyname = 'pubmed/img/PMC1518878_envhper00367-0088&copy.jpg'
+keyname = 'pubmed/img/PMC3241365_ar3245-3.jpg'
+
+    
 # keyname = 'imgs/PMC3898118_onc2012600x1.tif'
 # keyname = 'imgs/PMC2358978_pone.0002093.s003.tif'
 # keyname = 'imgs/PMC1033567_medhist00152-0104.tif'
@@ -168,6 +174,16 @@ imgStringData = key.get_contents_as_string()
 nparr = np.fromstring(imgStringData, np.uint8)
 img_np = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
 
+
+
+# Opt_Dmtler = Option_Dismantler(isTrain = False)
+# Dmtler = Dismantler(Opt_Dmtler)
+# 
+# if len(img_np.shape) == 3:
+#     img_np = cv.cvtColor(img_np, cv.COLOR_BGR2GRAY)
+#              
+# node_list = Dmtler.dismantle(img_np)
+# Dmtler.showSegmentationByList(img_np, node_list)
 
 # print cIL.isKeyValidImageFormat(key)
 # 

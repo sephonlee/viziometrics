@@ -25,6 +25,8 @@ except:
 # table 331883
 # equation 1418169
 # composite 1374721
+# regexp for %copy 147385 / 15670
+
 classname = 'scheme'
 filepath = os.path.join('/Users/sephon/Desktop/Research/VizioMetrics/Corpus/S3Sampling', classname)
 
@@ -37,6 +39,7 @@ DataFileTool.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', c
 for i in range(0,100):
     
     offset = randint(0, 630230)
+    query_regexp = 'SELECT imgf.img_loc, imgf.class_name, imgc.is_composite FROM image_full_info as imgf , image_composite as imgc WHERE imgf.img_id = imgc.img_id AND imgf.img_format = "jpg" AND SUBSTRING_INDEX(imgf.img_id, ".", 1) like "%copy"' + ' AND imgc.img_id REGEXP "PMC[0-9]+_[a-zA-Z]+[0-9]+-[0-9]+&copy" LIMIT 1 OFFSET %d' %offset
     query_1a = 'SELECT imgf.img_loc, imgf.class_name, imgc.is_composite' 
     query_1b = 'SELECT count(*)'
     query_2 = ' FROM image_full_info as imgf , image_composite as imgc WHERE imgf.img_id = imgc.img_id AND imgf.class_name = "%s" AND imgc.is_composite = 0 AND imgf.img_format = "jpg"' %(classname)

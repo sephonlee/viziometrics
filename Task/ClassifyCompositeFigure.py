@@ -69,7 +69,11 @@ def worker(args):
 
 def classifyCompositeFigure(query):
     
-    Class_Classifier_Opt = Option(isClassify = True)
+    if OPT_CCLF is not None:
+        Class_Classifier_Opt = OPT_CCLF
+    else:
+        Class_Classifier_Opt = Option(isClassify = True)
+        
     try:
         cImageLoader = CloudImageLoader(Class_Classifier_Opt)
         bucketList = cImageLoader.getBucketList()
@@ -147,6 +151,6 @@ def classifyCompositeFigure(query):
 
 if __name__ == '__main__':
     
-    query = "SELECT img_loc FROM s3_readable_keys WHERE is_readable is null AND img_format = 'jpg' limit 3000000 offset 200000"
+    query = "SELECT img_loc FROM s3_readable_keys WHERE is_readable is null AND img_format = 'png' limit 3000000 offset 0"
     classifyCompositeFigure(query)
     

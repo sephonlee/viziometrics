@@ -25,7 +25,7 @@ def getRanking(data):
  
 
 ###
-file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figures_paper_composite.csv'
+file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figure_paper_sub_class.csv'
 num_bin = 20
 ### /var/www/html/DB/figures_paper_composite.sql --> For all papers
 ### /var/www/html/DB/topic_ef_figure.sql  --> Select Topics
@@ -47,25 +47,25 @@ with open(file_name ,'rb') as incsv:
             figure_per_page = 0
             # Count Figure/Page
             if float(row[4]) != 0:
-                figure_per_page = (int(row[10]))/float(int(row[4])) ##############
+                figure_per_page = (int(row[9]))/float(int(row[4])) ##############
                 
             # Count proportional figure
             proportional_figure = 0
-            if (int(row[5]) + int(row[7])+ int(row[8])+ int(row[9])+int(row[10])) != 0:
-                proportional_figure = float(int(row[10]))/ ( int(row[5]) + int(row[7])+ int(row[8])+ int(row[9])+int(row[10])) ###########
-                   
+            if (int(row[6]) + int(row[7])+ int(row[8])+ int(row[9])) != 0:
+                proportional_figure = float(int(row[9]))/ ( int(row[6]) + int(row[7])+ int(row[8])+ int(row[9])) ###########
+            
             tmp = { 'longname': row[0],
                    'eigen_factor': float(row[2]),
                    'num_figures': int(row[3]),
                    'num_pages': int(row[4]),
-                   'num_composite': int(row[5]),
-                   'num_equations': int(row[6]),
-                   'num_tables': int(row[7]),
-                   'num_photos': int(row[8]),
-                   'num_visualizations': int(row[9]),
-                   'num_diagrams': int(row[10]),
+                   'num_equations': int(row[5]),
+                   'num_tables': int(row[6]),
+                   'num_photos': int(row[7]),
+                   'num_visualizations': int(row[8]),
+                   'num_diagrams': int(row[9]),
                    'figure_per_page': figure_per_page,
-                   'proportional_figure': proportional_figure}
+                   'proportional_figure': proportional_figure}  
+            
             data.append(tmp)
         
 num_valid_paper = len(data)
@@ -256,3 +256,7 @@ plt.text(num_bin*9/10, max(y_value) * 19/20, 'correlation coefficient: %f' % cor
 plt.text(num_bin*9/10, max(y_value) * 18/20, 'p-value: %f' % p_value_cor)
 ax.xaxis.set_major_formatter(xticks)
 plt.show()
+
+
+
+#         

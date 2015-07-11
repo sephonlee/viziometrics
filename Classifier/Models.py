@@ -12,6 +12,7 @@ from sklearn import svm
 from sklearn import cross_validation
 from sklearn import grid_search
 from sklearn import metrics
+from sklearn.preprocessing import LabelBinarizer
 
 # import csv
 # import itertools
@@ -414,7 +415,13 @@ class SVMClassifier:
 
     def getTenFoldValidation(self, X, Y):
         if self.modelOptimized:
-            return cross_validation.cross_val_score(self.classifier.best_estimator_, X, Y, cv=10)
+            accuracy = cross_validation.cross_val_score(self.classifier.best_estimator_, X, Y, cv=10)
+            
+            lb = LabelBinarizer()
+            y = np.array([number[0] for number in lb.fit_transform(Y)])
+            recall = cross_validation.cross_val_score(self.classifier.best_estimator_, X, y, cv=10, scoring='recall')
+            precision = cross_validation.cross_val_score(self.classifier.best_estimator_, X, y, cv=10, scoring='precision')
+            return (accuracy, recall, precision)
         else:
             print 'Model has not been trained.\n'
         
@@ -458,10 +465,22 @@ class SVMClassifier:
         self.modelTrained = True
         print 'Tuned Model: Full training data accuracy:', self.classifier.score(X, y)
         scores = self.getTenFoldValidation(X, y)
-        print "Tuned Model: 10-Fold cross-validation accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2)
+        accraucy = scores[0]
+        recall = scores[1]
+        precision = scores[2]
+        print "Tuned Model: 10-Fold cross-validation accuracy: %0.2f (+/- %0.2f)" % (accraucy.mean(), accraucy.std() * 2)
+        print "Tuned Model: 10-Fold cross-validation recall: %0.2f (+/- %0.2f)" % (recall.mean(), recall.std() * 2)
+        print recall
+        print "Tuned Model: 10-Fold cross-validation precision: %0.2f (+/- %0.2f)" % (precision.mean(), precision.std() * 2)
+        print precision
         
-        result = [['Cross-Validation', 'Full Data', 'Accuracy:', scores.mean(), scores.std()*2]]
-        Common.saveCSV(outModelPath, 'model_evaluation', result, mode = 'ab')
+        
+        result_accuracy = [['Cross-Validation', 'Full Data', 'Accuracy:', accraucy.mean(), accraucy.std()*2]]
+        Common.saveCSV(outModelPath, 'model_evaluation', result_accuracy, mode = 'ab')
+        result_recall = [['Cross-Validation', 'Full Data', 'Accuracy:', recall.mean(), recall.std()*2]]
+        Common.saveCSV(outModelPath, 'model_evaluation', result_recall, mode = 'ab')
+        result_precision = [['Cross-Validation', 'Full Data', 'Accuracy:', precision.mean(), precision.std()*2]]
+        Common.saveCSV(outModelPath, 'model_evaluation', result_precision, mode = 'ab')
         
         endTime = time.time()
         print 'Complete training model in ',  endTime - startTime, 'sec\n'

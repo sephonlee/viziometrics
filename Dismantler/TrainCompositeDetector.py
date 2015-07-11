@@ -140,6 +140,7 @@ if __name__ == '__main__':
     
     
     Opt_CID = Option_CompositeDetector(isTrain = True)
+#     Opt_dmtler = Option_Dismantler(isTrain = False)
     ImgLoader = ImageLoader(Opt_CID)
     CID = CompositeImageDetector(Opt_CID)
     
@@ -164,16 +165,16 @@ if __name__ == '__main__':
     
     print allFeatures.shape
 #     allFeatures, M, P = normalizeAndWhiten(allFeatures);
-    CID.saveFeatureDescriptorParamToFile(Opt_dmtler.modelPath)
+    CID.saveFeatureDescriptorParamToFile(Opt_CID.modelPath)
     
 #     allFeatures = whiten(allFeatures)
-    allLabeledNames = getLabeledName(Opt_dmtler.classNames, [len(compositeImageFileList), len(singleImageFileList)])
+    allLabeledNames = getLabeledName(Opt_CID.classNames, [len(compositeImageFileList), len(singleImageFileList)])
     print 'All images are loaded'
     
     
     print allFeatures[:,0:2].shape
-    SVM_train = SVMClassifier(Opt_dmtler, isTrain = True)
-    SVM_train.trainModel(allFeatures[:,0:2], allLabeledNames)
+    SVM_train = SVMClassifier(Opt_CID, isTrain = True)
+    SVM_train.trainModel(allFeatures, allLabeledNames)
 #     
 #     
 #     SVM_train = SVMClassifier(Opt_train, isTrain = True)

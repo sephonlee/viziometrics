@@ -7,6 +7,7 @@ from ete2 import Tree
 from ete2 import TreeNode
 from matplotlib import pyplot as plt
 from sets import Set
+from random import randint
 
 # import matplotlib.cm as cm
 # import random
@@ -300,11 +301,12 @@ class SubImageClassifier(SVMClassifier):
         height_per = float(size[0])/originalImageInfo['height']
         width_per = float(size[1])/originalImageInfo['width']
 #         aspect_ratio = float(min(size[0],size[1]))/max(size[1],size[0])
-        aspect_ratio = float(size[0])/size[1]
+        aspect_ratio_1 = float(size[0])/size[1]
+        aspect_ratio_2 = float(size[1])/size[0]
         blank_area_per = SubImageClassifier.getBlankArea(img, thresholds)/float(size[0]*size[1])
         segmental_blank_coverage = SubImageClassifier.getAllDivBlankLine(img, thresholds, num_cut)
         
-        feature_vector = np.hstack([np.asmatrix([area_per, height_per, width_per, aspect_ratio, blank_area_per]), segmental_blank_coverage])
+        feature_vector = np.hstack([np.asmatrix([area_per, height_per, width_per, aspect_ratio_1, aspect_ratio_2, blank_area_per]), segmental_blank_coverage])
         return feature_vector
     
     @ staticmethod
@@ -376,8 +378,10 @@ class Dismantler:
         self.current_save_path = save_path
         self.current_filename = filename
         self.pre_classified_for_train = pre_classified
-        self.split(img, 0)
-        self.split(img, 1)
+        
+        orientation = randint(0,1)
+        self.split(img, orientation)
+#         self.split(img, 1)
     
     def getSalientMap(self, img, root):
         
@@ -1301,50 +1305,51 @@ if __name__ == '__main__':
     
     #### Dismantler Test
     
-#     Opt_Dmtler = Option_Dismantler(isTrain = False)
-#     Dmtler = Dismantler(Opt_Dmtler)
-#     
-#     resultPath = '/Users/sephon/Desktop/Research/VizioMetrics/Dismantler/Result'
+    Opt_Dmtler = Option_Dismantler(isTrain = False)
+    Dmtler = Dismantler(Opt_Dmtler)
+     
+    resultPath = '/Users/sephon/Desktop/Research/VizioMetrics/Dismantler/Result'
 #     filename = "/Users/sephon/Desktop/Research/ReVision/code/ImageSeg/corpus/large_corpus/image_368.jpg"
-# #     filename = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_pure/visualization/image_1432.jpg"
-#     img = cv.imread(filename)
-# #     Dmtler.showImg(img)
-#  
-#     if len(img.shape) == 3:
-#         img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-# #     root, count_standalone = Dmtler.split(img, 0)
-# #     Dmtler.showSegmentation(img, root)
-# #     map = Dmtler.getSalientMap(img, root)
-# #     Dmtler.showImg(map)
-#             
-#     node_list = Dmtler.dismantle(img)
-#     Dmtler.showSegmentationByList(img, node_list)
+    filename = "/Users/sephon/Desktop/Research/VizioMetrics/test_ori.jpg"
+#     filename = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_pure/visualization/image_1432.jpg"
+    img = cv.imread(filename)
+#     Dmtler.showImg(img)
+  
+    if len(img.shape) == 3:
+        img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+#     root, count_standalone = Dmtler.split(img, 0)
+#     Dmtler.showSegmentation(img, root)
+#     map = Dmtler.getSalientMap(img, root)
+#     Dmtler.showImg(map)
+             
+    node_list = Dmtler.dismantle(img)
+    Dmtler.showSegmentationByList(img, node_list)
     
     #### Composite Figure Detector Test
     
-    startTime = time.time()
-    filename = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat0124_single_composite/composite/image_5752.jpg"
-#     filename = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_pure/visualization/image_1432.jpg"
-    img = cv.imread(filename)
-    if len(img.shape) == 3:
-            img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-            
-    Opt_Dmtler = Option_Dismantler(isTrain = False)
-    Dmtler = Dismantler(Opt_Dmtler)
-    
-    first_vertical, fire_lane_map_vertical, count_standalone_first_vertical = Dmtler.split(img, 0)
-    first_horizontal, fire_lane_map_horizontal, count_standalone_first_horizontal = Dmtler.split(img, 1)
-    map = fire_lane_map_vertical + fire_lane_map_horizontal
-    map = np.divide(map, np.max(map)) * 255
-    cv.imwrite('/Users/sephon/Desktop/Research/VizioMetrics/image_5752_firelane_map.jpg', map)
-        
-    Dmtler.showImg(map)
-        
-    Opt_CD = Option_CompositeDetector(isTrain = False)
-    CID = CompositeImageDetector(Opt_CD)
-#     map = Dmtler.getEffectiveRegionMask(img)
-    classname, prob = CID.getClassAndProabability(map)
-    print classname
-    print prob
-    print time.time() - startTime
+#     startTime = time.time()
+#     filename = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat0124_single_composite/composite/image_5752.jpg"
+# #     filename = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_pure/visualization/image_1432.jpg"
+#     img = cv.imread(filename)
+#     if len(img.shape) == 3:
+#             img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+#             
+#     Opt_Dmtler = Option_Dismantler(isTrain = False)
+#     Dmtler = Dismantler(Opt_Dmtler)
+#     
+#     first_vertical, fire_lane_map_vertical, count_standalone_first_vertical = Dmtler.split(img, 0)
+#     first_horizontal, fire_lane_map_horizontal, count_standalone_first_horizontal = Dmtler.split(img, 1)
+#     map = fire_lane_map_vertical + fire_lane_map_horizontal
+#     map = np.divide(map, np.max(map)) * 255
+#     cv.imwrite('/Users/sephon/Desktop/Research/VizioMetrics/image_5752_firelane_map.jpg', map)
+#         
+#     Dmtler.showImg(map)
+#         
+#     Opt_CD = Option_CompositeDetector(isTrain = False)
+#     CID = CompositeImageDetector(Opt_CD)
+# #     map = Dmtler.getEffectiveRegionMask(img)
+#     classname, prob = CID.getClassAndProabability(map)
+#     print classname
+#     print prob
+#     print time.time() - startTime
 

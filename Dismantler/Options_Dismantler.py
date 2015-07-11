@@ -35,7 +35,9 @@ class Option_Dismantler():
         
         ## SVM Classifier Parameter
         ##### Training #####
-        self.tuned_parameters = [{'kernel': ['rbf'], 'gamma': [0, 1e-3, 1e-4], 'C': [1, 10]},]
+#         self.tuned_parameters = [{'kernel': ['rbf'], 'gamma': [0, 1e-3, 1e-4], 'C': [1, 10]},]
+        self.tuned_parameters = [{'kernel': ['rbf'], 'gamma': [0, 1e-3, 1e-4], 'C': [1]},]
+#         self.tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
         self.classNames = ['standalone', 'auxiliary']
         
         
@@ -54,7 +56,7 @@ class Option_Dismantler():
         ##### Classifying #####
         if self.isClassify:
             ## Model ID
-            self.modelName = 'dismantler_matsplit_matsvm_ceil'
+            self.modelName = 'dismantler_matsplit_matsvm_ceil_latest'
             ## Model Saving Path
             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler'
 #             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Dismantler'
@@ -111,7 +113,7 @@ class Option_CompositeDetector():
         ## Classifiers
         self.availableClassifiers = ['SVM', 'CNN']
         self.activatedClassifiers = 'SVM'
-        self.tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]        
+        self.tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [0, 1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]        
         
         ##### Training #####
         if self.isTrain:

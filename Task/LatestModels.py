@@ -19,7 +19,7 @@ EC2 = False
 if EC2:
     # Model Path
     CCLF_PATH = '/home/ec2-user/VizioMetrics/Model/Classifier/nClass_5_2015-03-09_CPR'
-    DMTLER_PATH = '/home/ec2-user/VizioMetrics/Model/Dismantler/dismantler_matsplit_matsvm_ceil'
+    DMTLER_PATH = '/home/ec2-user/VizioMetrics/Model/Dismantler/dismantler_matsplit_matsvm_ceil_latest'
     CPSD_PATH = '/home/ec2-user/VizioMetrics/Model/Dismantler/composite_detector_firelanemap'
     
     # Data Path
@@ -28,7 +28,7 @@ if EC2:
 else:
     # Model Path
     CCLF_PATH = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier/nClass_5_2015-03-09_CPR'
-    DMTLER_PATH = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler/dismantler_matsplit_matsvm_ceil'
+    DMTLER_PATH = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler/dismantler_matsplit_matsvm_ceil_latest'
     CPSD_PATH = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler/composite_detector_firelanemap'
     
     # Data Path

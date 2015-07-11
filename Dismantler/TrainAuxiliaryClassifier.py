@@ -27,7 +27,7 @@ def getOriginalImageInfo(originalImageFileList):
 
 def getImageFeatureFromImagePath(imagePath, originalImageInfo, thresholds, num_cut = 5):
     
-    data = np.zeros([len(imagePath), 5+num_cut*2])
+    data = np.zeros([len(imagePath), 6+num_cut*2])
 
     for (i,filename) in enumerate(imagePath):
         
@@ -69,8 +69,8 @@ if __name__ == '__main__':
 #     standaloneImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/standalone"
 #     auxiliaryImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/auxiliary"
     
-#     standaloneImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subImage_split_by_py/standalone"
-#     auxiliaryImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subImage_split_by_py/auxiliary"
+#     standaloneImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/py_split/standalone"
+#     auxiliaryImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/py_split/auxiliary"
  
  
     originalImagePath = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi"
@@ -82,12 +82,14 @@ if __name__ == '__main__':
     standaloneImageFileList = ImgLoader.getFileNamesFromPath(standaloneImagePath)
     auxiliaryImageFileList = ImgLoader.getFileNamesFromPath(auxiliaryImagePath)
     
-    auxiliaryImageFileList = getBatchOfImageFileList(auxiliaryImageFileList, 5)
+    auxiliaryImageFileList = getBatchOfImageFileList(auxiliaryImageFileList, 1)
     
     
     originalImageInfo = getOriginalImageInfo(originalImageFileList)
     
     allFeatures = np.vstack([getImageFeatureFromImagePath(standaloneImageFileList, originalImageInfo, Opt_train.thresholds), getImageFeatureFromImagePath(auxiliaryImageFileList, originalImageInfo, Opt_train.thresholds)])
+    print allFeatures.shape
+    
     allLabeledNames = getLabeledName(Opt_train.classNames, [len(standaloneImageFileList), len(auxiliaryImageFileList)])
     print 'All images are loaded'
     

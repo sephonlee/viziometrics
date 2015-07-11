@@ -119,7 +119,7 @@ for i in range(1, num_bin + 1):
     index += 1
 
 x_value = ef
-y_value = df - np.mean(df)
+y_value = df# - np.mean(df)
 y_std = df_std
 
 for y_i in y_value:
