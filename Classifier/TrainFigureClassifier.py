@@ -9,10 +9,10 @@ from Models import *
 from DataManager import *
 from Dictionary import *
 
-# Opt_Dmtler = Option_Dismantler(isTrain = False)
-# Dmtler = Dismantler(Opt_Dmtler)
-# Opt_CID = Option_CompositeDetector(isTrain = True)
-# CID = CompositeImageDetector(Opt_CID)
+Opt_Dmtler = Option_Dismantler(isTrain = False)
+Dmtler = Dismantler(Opt_Dmtler)
+Opt_CID = Option_CompositeDetector(isTrain = True)
+CID = CompositeImageDetector(Opt_CID)
     
 def getFeatureByFireLaneMapFromFileList(fileList, showStatus = True):
         

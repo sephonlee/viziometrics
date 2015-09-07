@@ -22,11 +22,13 @@ def getRanking(data):
     return rankings
 
 
- 
+
 
 ###
-file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figure_paper_sub_class_new.csv'
-num_bin = 100
+file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figure_paper_sub_class_1997-2014.csv'
+num_bin = 20
+group_size = 2399
+
 ### /var/www/html/DB/figures_paper_composite.sql --> For all papers
 ### /var/www/html/DB/topic_ef_figure.sql  --> Select Topics
 ### Line 27,28, Filter Papers
@@ -42,8 +44,8 @@ with open(file_name ,'rb') as incsv:
     reader.next()
     for row in reader:
         
-        if float(row[2]) != 0: # Filter paper with EigenFactor == 0
-#         if float(row[4]) != 0: # Filter papers with page == 0
+#         if float(row[2]) != 0: # Filter paper with EigenFactor == 0
+        if float(row[4]) != 0: # Filter papers with page == 0
             figure_per_page = 0
             # Count Figure/Page
             if float(row[4]) != 0:
@@ -69,33 +71,72 @@ with open(file_name ,'rb') as incsv:
             data.append(tmp)
         
 num_valid_paper = len(data)
+# group_size = num_valid_paper/400
 print 'number of paper: ', num_valid_paper
+print 'group_size:', group_size
 
 raw_proportional_figure = np.zeros([len(data)])
 raw_eigen_factor = np.zeros([len(data)])
 raw_figure_per_page = np.zeros([len(data)])
 raw_page = np.zeros([len(data)])
 raw_figure = np.zeros([len(data)])
+
+tmpEF = 1
+paper_count = 0
+all_EF = {}
+list_paper_count = [] 
+list_change_ef_index = [0]
+list_pdf_paper_count = []
  
-for i, row in enumerate(data):    
+for i, row in enumerate(data):
+
+    if (tmpEF - row['eigen_factor'] > 0.000000000001):
+#         print tmpEF
+#         print row['eigen_factor']
+        all_EF[tmpEF] = paper_count
+        tmpEF = row['eigen_factor']
+#         print "next group"
+        if paper_count > group_size:
+            list_change_ef_index.append(i)
+            list_paper_count.append(paper_count)
+            list_pdf_paper_count.append(float(i)/num_valid_paper)
+            paper_count = 0
+    
+    paper_count += 1
+    
+    if i == len(data) - 1:
+        list_paper_count.append(paper_count)
+        list_pdf_paper_count.append(float(i)/num_valid_paper)
+        
+    
     raw_proportional_figure[i] = row['proportional_figure']
     raw_eigen_factor[i] = row['eigen_factor']
     raw_figure_per_page[i] = row['figure_per_page']
     raw_page[i] = row['num_pages']
     raw_figure[i] = row['num_figures']
+    
+print "gp", len(list_paper_count)
+print list_paper_count
+list_change_ef_index.append(len(data))
+print list_change_ef_index
+print list_pdf_paper_count
+
+num_bin = len(list_change_ef_index) - 1
+
+# print all_EF
 
 row_ranking = getRanking(raw_eigen_factor)
 
-######### Re-Sorting
+######## Re-Sorting
 # sort_indices = np.argsort(raw_page, axis=0)  ######### Sort by page (original data sorted by EigenFactor)
 # print sort_indices
-# # ori_y = y.copy()
+#  # ori_y = y.copy()
 # raw_proportional_figure = raw_proportional_figure[sort_indices][::-1]
 # raw_eigen_factor = raw_eigen_factor[sort_indices][::-1]
 # raw_figure_per_page = raw_figure_per_page[sort_indices][::-1]
 # raw_page = raw_page[sort_indices][::-1]
 # raw_figure = raw_figure[sort_indices][::-1]
-##########
+#########
     
 print 'Top 10%: ', np.mean(raw_proportional_figure[0:num_valid_paper/10])
 print 'Bottom 90%: ', np.mean(raw_proportional_figure[num_valid_paper/10:])
@@ -106,51 +147,7 @@ print 'Bottom 50%: ',  np.mean(raw_proportional_figure[num_valid_paper/2:])
 print 'All: ', np.mean(raw_proportional_figure)
 
 
-###### scattering heat map
-myFig1 = plt.figure(1)
 
-# for i in range(0, 20):
-#     result = np.histogram(raw_proportional_figure[0:5000], bins=np.arange(0,1,0.1))
-    
-    
-# result_1 = np.histogram(raw_proportional_figure[0:5000], bins=np.arange(0,1,0.1))
-# print result_1
-# plt.subplot(311)
-# # print result_1[1][0:9]
-# # print result_1[0]
-# plt.bar(result_1[1][0:9], result_1[0], 0.1,
-#                  label='Men')
-#  
-# result_2 = np.histogram(raw_proportional_figure[150000:155000], bins=np.arange(0,1,0.1))
-# print result_2
-# plt.subplot(312)
-# plt.bar(result_2[1][0:9], result_2[0], 0.1,
-#                  label='Men')
-#  
-# result_2 = np.histogram(raw_proportional_figure[150000:155000], bins=np.arange(0,1,0.1))
-# print result_2
-# plt.subplot(313)
-# plt.bar(result_2[1][0:9], result_2[0], 0.1,
-#                  label='Men')
-# plt.show()
-
-# plt.hexbin(raw_eigen_factor[5000:], raw_proportional_figure[5000:],bins='log', cmap=plt.cm.YlOrRd_r)
-print np.max(row_ranking)
-# print row_proportional_figure_ranking[row_proportional_figure_ranking == 348289].shape
-
-plt.hexbin(row_ranking[:], raw_figure_per_page[:], bins='log', cmap=plt.cm.YlOrRd_r)
-plt.ylabel('|Figure| /  |Page|')
-plt.xlabel('Ranking via Average EigenFactor')
-plt.title('Papers From Pubmed Central')
-# plt.axis([0, np.max(raw_eigen_factor) * 1.1, 0, np.max(raw_proportional_figure) * 1.1])
-# plt.show()#//////////////////////
-# 
-plt.scatter(row_ranking, raw_figure_per_page, alpha=0.5)
-plt.ylabel('|Figures| /  |Page| ')
-plt.xlabel('Ranking via Average EigenFactor')
-plt.title('Papers From Pubmed Central')
-plt.axis([0, np.max(row_ranking) * 1.1, 0, np.max(raw_proportional_figure) * 1.1])
-# plt.show()#//////////////////////
 
 
 
@@ -169,9 +166,12 @@ histogram = np.zeros((num_bin, 10))
 greaterThenAvg = []
 color = []
 index = 0
-for i in range(1, num_bin + 1):
-    start_index = int(math.ceil((i-1) * capacity))
-    end_index = int(math.ceil(i * capacity))
+for i in range(0, len(list_change_ef_index)-1):
+#     start_index = int(math.ceil((i-1) * capacity))
+#     end_index = int(math.ceil(i * capacity))
+
+    start_index = list_change_ef_index[i]
+    end_index = list_change_ef_index[i+1]
     group_proportional_figure[index] = np.mean(raw_proportional_figure[start_index:end_index])
     group_proportional_figure_std[index] = np.std(raw_proportional_figure[start_index:end_index])
     group_fpp[index] = np.mean(raw_figure_per_page[start_index:end_index])
@@ -189,34 +189,33 @@ for i in range(1, num_bin + 1):
     greaterThenAvg.append(np.sum(histo[0][3:]))
 
     print i, (i-1)%2+1, (i-1)/2+1
-    ax = myFig1.add_subplot(num_bin/2, 2, i)
-    ax.bar(histo[1][0:-1], histo[0], 0.05,
-                 label='Men')
-    title = 'rank: %d,  start: %d, end: %d' %(i, start_index, end_index)
-    ax.set_ylim([0,14000])
-    ax.set_title(title)
+#     ax = myFig1.add_subplot(num_bin/2, 2, i)
+#     ax.bar(histo[1][0:-1], histo[0], 0.05,
+#                  label='Men')
+#     title = 'rank: %d,  start: %d, end: %d' %(i, start_index, end_index)
+#     ax.set_ylim([0,14000])
+#     ax.set_title(title)
 
-# print np.mean(histogram[9:], axis = 0)
-# print group_page.shape
-# print greaterThenAvg
-# plt.show()#///////////////////////////////////////////
-# print histogram
+
 
 ## Assign X, Y value
 x_value = group_eigen_factor ##################
-y_value = group_proportional_figure ################
+y_value = group_fpp ################
+# y_value = group_proportional_figure
 y_std = group_proportional_figure_std ###########
+y_std = group_fpp_std
 
 ## Plot Scatter
 slope, intercept, r_value, p_value, std_err = stats.linregress(x_value, y_value)
-plt.plot(x_value, x_value*slope+intercept)
-plt.scatter(x_value, y_value, alpha=0.5)
+# plt.plot(x_value, x_value*slope+intercept)
+plt.scatter(x_value, y_value, s = np.sqrt(np.array(list_paper_count)), alpha=0.5)
 plt.axis([0, np.max(x_value) * 1.1, 0, np.max(y_value) * 1.1])
-plt.ylabel('Proportion of Figures that are Classified as Diagrams')
-plt.xlabel('Sum of EigenFactor')
+# plt.ylabel('Proportion of Figures that are Classified as Diagrams')
+plt.ylabel('Average |Diagram| / |Page|')
+plt.xlabel('Average EigenFactor')
 plt.text(max(x_value)*9/10, max(y_value) * 2 / 12, 'slope: %f' % slope)
 plt.text(max(x_value)*9/10, max(y_value) / 12, 'p-value: %f' % p_value)
-# plt.show()
+plt.show()
  
  
 ## Calculate correlation and p_value
@@ -225,22 +224,32 @@ plt.text(max(x_value)*9/10, max(y_value) / 12, 'p-value: %f' % p_value)
 ## Plot Bar Chart
 ## Assign X, Y value
 x_value = group_eigen_factor ##################
-y_value = group_proportional_figure ################
-y_value -= np.mean(y_value) 
-y_std = group_proportional_figure_std ###########
+y_value = group_fpp ################
+# y_value = group_proportional_figure
+# y_value -= np.mean(y_value) 
+# y_std = group_proportional_figure_std ###########
+y_std = group_fpp_std
 
 for y_i in y_value:
     if y_i < 0:
-        color.append('r')
+        color.append('#9B7D67')
     else:
-        color.append('b')
+        color.append('#B29677')
         
 # index = range(1, num_bin + 1)
 index = np.linspace(0,100, (num_bin))
-bar_width = 0.3
-
+print "index1", index
+index = np.array(list_pdf_paper_count) * 100
+print "index2", index
+# bar_width = 1
+bar_width = np.array(list_paper_count)/float(num_valid_paper) * 100
+index -= bar_width
+print "barwidth", bar_width
 fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
+
+
+
 
 rects1 = ax.bar(index, y_value, bar_width,
                  color=color,
@@ -249,18 +258,25 @@ rects1 = ax.bar(index, y_value, bar_width,
  
 print 'x', index
 print 'y', y_value
-  
+
+fontSize = 18
 fmt = '%.0f%%' # Format the ticks, e.g. '40%'
 xticks = mtick.FormatStrFormatter(fmt)
 # plt.ylabel('Number of Paper with Diagram/Figure Greater Then Average')
-plt.ylabel('Proportion of Figures that are Classified as Diagrams')
-plt.xlabel('Ranking via Average EigenFactor')
-plt.title('Papers From Pubmed Central')
-plt.text(num_bin*9/10, max(y_value) * 19/20, 'correlation coefficient: %f' % cor_coef)
-plt.text(num_bin*9/10, max(y_value) * 18/20, 'p-value: %f' % p_value_cor)
+# plt.ylabel('Proportion of Figures that are Classified as Diagrams', fontsize = fontSize)
+plt.ylabel('Average |Diagram| / |Page|', fontsize = fontSize)
+plt.xlabel('Ranked Impact By EigenFactor', fontsize = fontSize)
+plt.title('Papers From Pubmed Central', fontsize = fontSize)
+# plt.title('Protein Database')
+plt.text(100*6.5/10, max(y_value) * 19/20, 'correlation coefficient: %f' % cor_coef, fontsize = fontSize)
+plt.text(100*6.5/10, max(y_value) * 18/20, 'p-value: %f' % p_value_cor, fontsize = fontSize)
+plt.tick_params(axis='both', which='major', labelsize = fontSize)
+# for i, count in enumerate(list_paper_count):
+#     plt.text(i*2, max(y_value) * i/50, count)
+# plt.axis([-3, 103, np.min(y_value) * 1.1, np.max(y_value) * 1.1])
 ax.xaxis.set_major_formatter(xticks)
 plt.show()
-
+# fig.savefig('/Users/sephon/Desktop/viz/all_single_new/percentile/Diagram_FilterPG_GroupByEF_FP_1997-2010_g650.eps', format='eps')
 
 
 #         

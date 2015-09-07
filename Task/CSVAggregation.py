@@ -9,7 +9,7 @@ def read_float_with_comma(num):
  
  
 ### Composite_result 
-csv_path = '/Users/sephon/Desktop/Research/VizioMetrics/cloud_result/dismantle_result'
+csv_path = '/Users/sephon/Desktop/Research/VizioMetrics/cloud_result/new_dismantle_result_0720'
 resultCSVList = []
 errorCSVList = []
 invalidCSVList = []

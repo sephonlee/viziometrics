@@ -158,7 +158,7 @@ def localWorker(Opt, FD, Clf, fname, q_result, q_error):
 
 
 #### Test s3 image
-keyname = 'pubmed/img/PMC3241365_ar3245-3.jpg'
+keyname = 'pubmed/img/PMC2195757_JEM991620.f1.jpg'
 
     
 # keyname = 'imgs/PMC3898118_onc2012600x1.tif'

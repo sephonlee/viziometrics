@@ -33,8 +33,9 @@ class Option():
         ## Classifiers
         self.availableClassifiers = ['SVM', 'CNN']
         self.activatedClassifiers = 'SVM'
-        self.tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
-
+#         self.tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
+        self.tuned_parameters = [{'kernel': ['rbf', 'linear'], 'gamma': [1e-3], 'C': [1]},]
+        
         ## S3 Data Read Parameter
         self.keyPath = '/Users/sephon/Desktop/Research/VizioMetrics/keys.txt'
 #         self.keyPath = '/home/ec2-user/VizioMetrics/keys.txt'
@@ -77,7 +78,8 @@ class Option():
             ## New Model Name
             self.modelName = 'nClass_%d_' % len(self.classNames)
             ## Corpus Path
-            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_sub"
+#             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_sub"
+            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014_sub"
 #             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124"
             ## Model Saving Path
             self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier"

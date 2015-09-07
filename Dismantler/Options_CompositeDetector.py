@@ -66,11 +66,11 @@ class Option_CompositeDetector():
             ## New Model Name
             self.modelName = 'nClass_%d_' % len(self.classNames)
             ## Corpus Path
-            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/CNN/CNN_decomposite"
-#             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014"
+#             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/CNN/CNN_decomposite"
+            self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014"
             ## Model Saving Path
-            self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler"
-#             self.modelSavingPath = "/home/ec2-user/VizioMetrics/Model/Classifier"
+#             self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler"
+            self.modelSavingPath = "/home/ec2-user/VizioMetrics/Model/Classifier"
             ## New Model Path
             self.modelPath = Common.getModelPath(self.modelSavingPath, self.modelName)
         
@@ -79,14 +79,14 @@ class Option_CompositeDetector():
             ## Model ID
             self.modelName = 'nClass_4_2015-02-19_CPR'
             ## Model Saving Path
-            self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier'
-#             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Classifier'
+#             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier'
+            self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Classifier'
             ## Corpus Path
-            self.testCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014_test"
-#             self.testCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014_test"
+#             self.testCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014_test"
+            self.testCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014_test"
             ## Result Directory
-            self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
-#             self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
+#             self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
+            self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
             ## Default Dictionary Path
             self.dicPath = os.path.join(self.modelSavingPath, self.modelName)
             ## Default SVM Model Path
@@ -102,15 +102,15 @@ class Option_CompositeDetector():
 #             self.modelName = 'nClass_6_2014-10-30'
             self.modelName = 'nClass_4_2015-02-19_CPR'
             ## Model Saving Path
-            self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier'
-#             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Classifier'
+#             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier'
+            self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Classifier'
             ## Corpus Path
-            self.classifyCorpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/testCorpus'
+#             self.classifyCorpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/testCorpus'
 #             self.classifyCorpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/test_corpus/large_corpus'
-#             self.classifyCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014_test"
+            self.classifyCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014_test"
             ## Result Directory
-            self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
-#             self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
+#             self.resultSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/class_result'
+            self.resultSavingPath = '/home/ec2-user/VizioMetrics/class_result'
             ## Default Dictionary Path
             self.dicPath = os.path.join(self.modelSavingPath, self.modelName)
             ## Default SVM Model Path

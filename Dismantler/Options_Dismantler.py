@@ -45,11 +45,11 @@ class Option_Dismantler():
             ## New Model Name
             self.modelName = 'dismantler_matsplit_matsvm_ceil'
             ## Corpus Path
-            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Dismantler/Corpus/train_corpus"
-#             self.trainCorpusPath = '/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages'
+#             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Dismantler/Corpus/train_corpus"
+            self.trainCorpusPath = '/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages'
             ## Model Saving Path
-            self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler"
-#             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Dismantler'
+#             self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler"
+            self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Dismantler'
             ## New Model Path
             self.modelPath = Common.getModelPath(self.modelSavingPath, self.modelName)   
         
@@ -58,8 +58,8 @@ class Option_Dismantler():
             ## Model ID
             self.modelName = 'dismantler_matsplit_matsvm_ceil_latest'
             ## Model Saving Path
-            self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler'
-#             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Dismantler'
+#             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler'
+            self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Dismantler'
             ## Default Dictionary Path
             self.dicPath = os.path.join(self.modelSavingPath, self.modelName)
             ## Default SVM Model Path
@@ -120,11 +120,11 @@ class Option_CompositeDetector():
             ## New Model Name
             self.modelName = 'nClass_%d_' % len(self.classNames)
             ## Corpus Path
-            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/ee_cat1_multi_subimages"
-#             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/ee_cat1_multi_subimages"
+#             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/ee_cat1_multi_subimages"
+            self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/ee_cat1_multi_subimages"
             ## Model Saving Path
-            self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler"
-#             self.modelSavingPath = "/home/ec2-user/VizioMetrics/Model/Dismantler"
+#             self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler"
+            self.modelSavingPath = "/home/ec2-user/VizioMetrics/Model/Dismantler"
             ## New Model Path
             self.modelPath = Common.getModelPath(self.modelSavingPath, self.modelName)
         
@@ -135,8 +135,8 @@ class Option_CompositeDetector():
 #             self.modelName = 'nClass_6_2014-10-30'
             self.modelName = 'composite_detector_firelanemap'
             ## Model Saving Path
-            self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler'
-#             self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Classifier'
+#             self.modelSavingPath = '/Users/sephon/Desktop/Research/VizioMetrics/Model/Dismantler'
+            self.modelSavingPath = '/home/ec2-user/VizioMetrics/Model/Classifier'
             ## Default SVM Model Path
             self.modelPath = os.path.join(self.modelSavingPath, self.modelName)
             

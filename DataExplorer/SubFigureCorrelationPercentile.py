@@ -25,8 +25,8 @@ def getRanking(data):
  
 
 ###
-file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figure_paper_sub_class_new.csv'
-num_bin = 100
+file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figure_paper_sub_class_1997-2014.csv'
+num_bin = 50
 ### /var/www/html/DB/figures_paper_composite.sql --> For all papers
 ### /var/www/html/DB/topic_ef_figure.sql  --> Select Topics
 ### Line 27,28, Filter Papers
@@ -47,7 +47,7 @@ with open(file_name ,'rb') as incsv:
             figure_per_page = 0
             # Count Figure/Page
             if float(row[4]) != 0:
-                figure_per_page = (int(row[9]))/float(int(row[4])) ##############
+                figure_per_page = (int(row[6]))/float(int(row[4])) ##############
                 
             # Count proportional figure
             proportional_figure = 0
@@ -76,13 +76,37 @@ raw_eigen_factor = np.zeros([len(data)])
 raw_figure_per_page = np.zeros([len(data)])
 raw_page = np.zeros([len(data)])
 raw_figure = np.zeros([len(data)])
+
+tmpEF = 1
+paper_count = 0
+all_EF = {}
+list_paper_count = [] 
+list_change_ef_index = []
  
-for i, row in enumerate(data):    
+for i, row in enumerate(data):
+
+    if (tmpEF - row['eigen_factor'] > 0.00000001):
+#         print tmpEF
+#         print row['eigen_factor']
+        all_EF[tmpEF] = paper_count
+        tmpEF = row['eigen_factor']
+#         print "next group"
+        if paper_count > 800:
+            list_change_ef_index.append(i)
+            list_paper_count.append(paper_count)
+            paper_count = 0
+    paper_count += 1
+    
     raw_proportional_figure[i] = row['proportional_figure']
     raw_eigen_factor[i] = row['eigen_factor']
     raw_figure_per_page[i] = row['figure_per_page']
     raw_page[i] = row['num_pages']
     raw_figure[i] = row['num_figures']
+    
+print "gp", len(list_paper_count)
+print list_paper_count
+print list_change_ef_index
+# print all_EF
 
 row_ranking = getRanking(raw_eigen_factor)
 
@@ -106,51 +130,7 @@ print 'Bottom 50%: ',  np.mean(raw_proportional_figure[num_valid_paper/2:])
 print 'All: ', np.mean(raw_proportional_figure)
 
 
-###### scattering heat map
-myFig1 = plt.figure(1)
 
-# for i in range(0, 20):
-#     result = np.histogram(raw_proportional_figure[0:5000], bins=np.arange(0,1,0.1))
-    
-    
-# result_1 = np.histogram(raw_proportional_figure[0:5000], bins=np.arange(0,1,0.1))
-# print result_1
-# plt.subplot(311)
-# # print result_1[1][0:9]
-# # print result_1[0]
-# plt.bar(result_1[1][0:9], result_1[0], 0.1,
-#                  label='Men')
-#  
-# result_2 = np.histogram(raw_proportional_figure[150000:155000], bins=np.arange(0,1,0.1))
-# print result_2
-# plt.subplot(312)
-# plt.bar(result_2[1][0:9], result_2[0], 0.1,
-#                  label='Men')
-#  
-# result_2 = np.histogram(raw_proportional_figure[150000:155000], bins=np.arange(0,1,0.1))
-# print result_2
-# plt.subplot(313)
-# plt.bar(result_2[1][0:9], result_2[0], 0.1,
-#                  label='Men')
-# plt.show()
-
-# plt.hexbin(raw_eigen_factor[5000:], raw_proportional_figure[5000:],bins='log', cmap=plt.cm.YlOrRd_r)
-print np.max(row_ranking)
-# print row_proportional_figure_ranking[row_proportional_figure_ranking == 348289].shape
-
-plt.hexbin(row_ranking[:], raw_figure_per_page[:], bins='log', cmap=plt.cm.YlOrRd_r)
-plt.ylabel('|Figure| /  |Page|')
-plt.xlabel('Ranking via Average EigenFactor')
-plt.title('Papers From Pubmed Central')
-# plt.axis([0, np.max(raw_eigen_factor) * 1.1, 0, np.max(raw_proportional_figure) * 1.1])
-# plt.show()#//////////////////////
-# 
-plt.scatter(row_ranking, raw_figure_per_page, alpha=0.5)
-plt.ylabel('|Figures| /  |Page| ')
-plt.xlabel('Ranking via Average EigenFactor')
-plt.title('Papers From Pubmed Central')
-plt.axis([0, np.max(row_ranking) * 1.1, 0, np.max(raw_proportional_figure) * 1.1])
-# plt.show()#//////////////////////
 
 
 
@@ -189,22 +169,18 @@ for i in range(1, num_bin + 1):
     greaterThenAvg.append(np.sum(histo[0][3:]))
 
     print i, (i-1)%2+1, (i-1)/2+1
-    ax = myFig1.add_subplot(num_bin/2, 2, i)
-    ax.bar(histo[1][0:-1], histo[0], 0.05,
-                 label='Men')
-    title = 'rank: %d,  start: %d, end: %d' %(i, start_index, end_index)
-    ax.set_ylim([0,14000])
-    ax.set_title(title)
+#     ax = myFig1.add_subplot(num_bin/2, 2, i)
+#     ax.bar(histo[1][0:-1], histo[0], 0.05,
+#                  label='Men')
+#     title = 'rank: %d,  start: %d, end: %d' %(i, start_index, end_index)
+#     ax.set_ylim([0,14000])
+#     ax.set_title(title)
 
-# print np.mean(histogram[9:], axis = 0)
-# print group_page.shape
-# print greaterThenAvg
-# plt.show()#///////////////////////////////////////////
-# print histogram
+
 
 ## Assign X, Y value
 x_value = group_eigen_factor ##################
-y_value = group_proportional_figure ################
+y_value = group_fpp ################
 y_std = group_proportional_figure_std ###########
 
 ## Plot Scatter
@@ -216,7 +192,7 @@ plt.ylabel('Proportion of Figures that are Classified as Diagrams')
 plt.xlabel('Sum of EigenFactor')
 plt.text(max(x_value)*9/10, max(y_value) * 2 / 12, 'slope: %f' % slope)
 plt.text(max(x_value)*9/10, max(y_value) / 12, 'p-value: %f' % p_value)
-# plt.show()
+plt.show()
  
  
 ## Calculate correlation and p_value
@@ -225,8 +201,8 @@ plt.text(max(x_value)*9/10, max(y_value) / 12, 'p-value: %f' % p_value)
 ## Plot Bar Chart
 ## Assign X, Y value
 x_value = group_eigen_factor ##################
-y_value = group_proportional_figure ################
-y_value -= np.mean(y_value) 
+y_value = group_fpp ################
+# y_value -= np.mean(y_value) 
 y_std = group_proportional_figure_std ###########
 
 for y_i in y_value:
@@ -256,8 +232,9 @@ xticks = mtick.FormatStrFormatter(fmt)
 plt.ylabel('Proportion of Figures that are Classified as Diagrams')
 plt.xlabel('Ranking via Average EigenFactor')
 plt.title('Papers From Pubmed Central')
-plt.text(num_bin*9/10, max(y_value) * 19/20, 'correlation coefficient: %f' % cor_coef)
-plt.text(num_bin*9/10, max(y_value) * 18/20, 'p-value: %f' % p_value_cor)
+plt.text(num_bin*8/10, max(y_value) * 19/20, 'correlation coefficient: %f' % cor_coef)
+plt.text(num_bin*8/10, max(y_value) * 18/20, 'p-value: %f' % p_value_cor)
+# plt.axis([-3, 103, np.min(y_value) * 1.1, np.max(y_value) * 1.1])
 ax.xaxis.set_major_formatter(xticks)
 plt.show()
 

@@ -145,11 +145,11 @@ if __name__ == '__main__':
     CID = CompositeImageDetector(Opt_CID)
     
 #     print finalDim
-#     singleImageFileList = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_single_composite/single"
-#     compositeImageFileList = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_single_composite/composite"
+    singleImageFileList = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_single_composite/single"
+    compositeImageFileList = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_single_composite/composite"
     
-    singleImageFileList = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat0124_single_composite/single"
-    compositeImageFileList = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat0124_single_composite/composite"
+#     singleImageFileList = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat0124_single_composite/single"
+#     compositeImageFileList = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat0124_single_composite/composite"
     
     print 'Loading images...'
     compositeImageFileList = ImgLoader.getFileNamesFromPath(compositeImageFileList)
