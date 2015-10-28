@@ -32,6 +32,18 @@ def listener(name, q, outPath, outFilename):
     outcsv.flush()
     outcsv.close()
 
+
+
+# def updateImageToEffectiveArea(img, thresholds):
+#     heads, ends = Dismantler.getEffectiveImageArea(img, thresholds)
+#     
+#     if ends[1] > heads[1] and ends[0] > heads[0]:
+#         new_img = img[heads[1]:ends[1], heads[0]:ends[0]]
+#     else:
+#         new_img = img
+#         
+#     return new_img
+#     
 def worker(args):
     
     row, q_result, q_error, q_invalid = args
@@ -46,18 +58,21 @@ def worker(args):
         try:
             # Load Image
             img = CloudImageLoader.keyToValidImage(key)
+            imDim = img.shape
+            # shrink to effective area
+#             img = updateImageToEffectiveArea(img, OPT_DMTLER.thresholds)
             
-            mask = DMTLER.getEffectiveRegionMask(img)
-            classname, prob = CPSD.getClassAndProabability(mask)
+            imData, imDim_shirnked = ImageLoader.preImageProcessing(img, OPT_CCLF.finalDim, OPT_CCLF.preserveAspectRatio)
+            
+            X = FD.extractSingleImageFeatures(imData, 1)
+            y_pred, y_proba = CCLF.predict(X)
             
             image_id = key.name.split('/')[-1]
-            paper_id = image_id.split('_')[0][3:]
-            
-            is_composite = False
-            if classname[0] == 'composite':
-                is_composite = True
-    
-            result = zip([image_id], [paper_id], [key.name], [is_composite], prob)
+            pmcid = image_id.split('_')[0][3:]
+            image_format = image_id.split('.')[-1].lower()
+       
+            result = zip([image_id], [pmcid], [key.name], y_pred, y_proba, [image_format], [imDim[0]], [imDim[1]], [key.size])
+
             print result
             q_result.put(result)
         except:
@@ -94,9 +109,9 @@ def classifyCompositeFigure(query):
     output_id = hash(query) / 10000000000000
     
     # Result Out
-    header = ['img_id', 'paper_id', 'img_loc', 'is_composite', 'probability']    
+    header = ['img_id', 'pmcid', 'img_loc', 'class_name', 'class_probability', 'img_format', 'img_height', 'img_width', 'key_size']    
     csvSavingPath = Class_Classifier_Opt.resultPath
-    csvFilename = 'composite_result_parallel_%s' % output_id
+    csvFilename = 'class_result_parallel_%s' % output_id
     DataFileTool.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
     q_result = manager.Queue() 
     p_result = mp.Process(target = listener, args=('Result', q_result, csvSavingPath, csvFilename))
@@ -105,7 +120,7 @@ def classifyCompositeFigure(query):
     # Error Out
     header = ['img_id', 'file_size']
     csvSavingPath = Class_Classifier_Opt.resultPath
-    csvFilename = 'composite_error_parallel_%s' % output_id
+    csvFilename = 'class_error_parallel_%s' % output_id
     Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
     q_error = manager.Queue() 
     p_error = mp.Process(target = listener, args=('Error', q_error, csvSavingPath, csvFilename))
@@ -114,7 +129,7 @@ def classifyCompositeFigure(query):
     # Invalid Out
     header = ['img_id', 'file_size']
     csvSavingPath = Class_Classifier_Opt.resultPath
-    csvFilename = 'composite_invalid_parallel_%s' % output_id
+    csvFilename = 'class_invalid_parallel_%s' % output_id
     Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
     q_invalid = manager.Queue() 
     p_invalid = mp.Process(target = listener, args=('Result', q_invalid, csvSavingPath, csvFilename))
@@ -152,5 +167,8 @@ def classifyCompositeFigure(query):
 if __name__ == '__main__':
     
     query = "SELECT img_loc FROM s3_readable_keys WHERE is_readable is null AND (img_format = 'jpg' OR img_format = 'png') limit 3000000 offset 0"
+#     query = "select img_loc from keys_s3 WHERE img_format = 'jpg' LIMIT 1000000"
+#     query = 'SELECT img_loc from s3_keys as s3 WHERE s3.img_id NOT REGEXP "PMC[0-9]+_[a-zA-Z]+[0-9]+-[0-9]+&copy" AND (s3.img_format = "jpg" OR s3.img_format = "png") AND img_id not in ( SELECT img_id from image_full_info WHERE img_id NOT REGEXP "PMC[0-9]+_[a-zA-Z]+[0-9]+-[0-9]+&copy" AND (img_format = "jpg" OR img_format = "png"))'
+
     classifyCompositeFigure(query)
     

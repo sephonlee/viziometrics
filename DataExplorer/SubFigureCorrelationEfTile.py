@@ -25,9 +25,11 @@ def getRanking(data):
 
 
 ###
-file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figure_paper_sub_class_1997-2014.csv'
+#query: figure_paper_sub_class.sql
+file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/forpaper/figure_paper_sub_class_expectation_1997-2014_filter_PLoS_One.csv'
 num_bin = 20
-group_size = 2399
+group_size = 3 #filter_PLoS_One
+# group_size = 2469 #all
 
 ### /var/www/html/DB/figures_paper_composite.sql --> For all papers
 ### /var/www/html/DB/topic_ef_figure.sql  --> Select Topics
@@ -39,32 +41,35 @@ group_size = 2399
 ### Line 139,140, Assign x,y variables to plot barchart
 
 data = []
+pg = 0
 with open(file_name ,'rb') as incsv:
     reader = csv.reader(incsv, dialect='excel')
     reader.next()
     for row in reader:
         
+        if float(row[4]) == 0:
+            pg += 1
 #         if float(row[2]) != 0: # Filter paper with EigenFactor == 0
         if float(row[4]) != 0: # Filter papers with page == 0
             figure_per_page = 0
             # Count Figure/Page
             if float(row[4]) != 0:
-                figure_per_page = (int(row[9]))/float(int(row[4])) ##############
+                figure_per_page = (float(row[9]))/float(int(row[4])) ##############
                 
             # Count proportional figure
             proportional_figure = 0
-            if (int(row[6]) + int(row[7])+ int(row[8])+ int(row[9])) != 0:
-                proportional_figure = float(int(row[9]))/ ( int(row[6]) + int(row[7])+ int(row[8])+ int(row[9])) ###########
+            if (float(row[6]) + float(row[7])+ float(row[8])+ float(row[9])) != 0:
+                proportional_figure = float(float(row[9]))/ ( float(row[6]) + float(row[7])+ float(row[8])+ float(row[9])) ###########
             
             tmp = { 'longname': row[0],
                    'eigen_factor': float(row[2]),
                    'num_figures': int(row[3]),
                    'num_pages': int(row[4]),
-                   'num_equations': int(row[5]),
-                   'num_tables': int(row[6]),
-                   'num_photos': int(row[7]),
-                   'num_visualizations': int(row[8]),
-                   'num_diagrams': int(row[9]),
+                   'num_equations': float(row[5]),
+                   'num_tables': float(row[6]),
+                   'num_photos': float(row[7]),
+                   'num_visualizations': float(row[8]),
+                   'num_diagrams': float(row[9]),
                    'figure_per_page': figure_per_page,
                    'proportional_figure': proportional_figure}  
             
@@ -114,7 +119,12 @@ for i, row in enumerate(data):
     raw_figure_per_page[i] = row['figure_per_page']
     raw_page[i] = row['num_pages']
     raw_figure[i] = row['num_figures']
-    
+
+# print np.mean(raw_figure_per_page)    
+# entries, bin_edges, patches = plt.hist(raw_figure_per_page, bins=50, range=[-0.5, 6], normed=True)
+# plt.show()
+
+
 print "gp", len(list_paper_count)
 print list_paper_count
 list_change_ef_index.append(len(data))
@@ -263,10 +273,10 @@ fontSize = 18
 fmt = '%.0f%%' # Format the ticks, e.g. '40%'
 xticks = mtick.FormatStrFormatter(fmt)
 # plt.ylabel('Number of Paper with Diagram/Figure Greater Then Average')
-# plt.ylabel('Proportion of Figures that are Classified as Diagrams', fontsize = fontSize)
+# plt.ylabel('Proportion of Figures that are Classified as Diagram', fontsize = fontSize)
 plt.ylabel('Average |Diagram| / |Page|', fontsize = fontSize)
-plt.xlabel('Ranked Impact By EigenFactor', fontsize = fontSize)
-plt.title('Papers From Pubmed Central', fontsize = fontSize)
+plt.xlabel('Ranked Impact By Eigenfactor', fontsize = fontSize)
+plt.title('Papers From PubMed Central', fontsize = fontSize)
 # plt.title('Protein Database')
 plt.text(100*6.5/10, max(y_value) * 19/20, 'correlation coefficient: %f' % cor_coef, fontsize = fontSize)
 plt.text(100*6.5/10, max(y_value) * 18/20, 'p-value: %f' % p_value_cor, fontsize = fontSize)
@@ -276,7 +286,7 @@ plt.tick_params(axis='both', which='major', labelsize = fontSize)
 # plt.axis([-3, 103, np.min(y_value) * 1.1, np.max(y_value) * 1.1])
 ax.xaxis.set_major_formatter(xticks)
 plt.show()
-# fig.savefig('/Users/sephon/Desktop/viz/all_single_new/percentile/Diagram_FilterPG_GroupByEF_FP_1997-2010_g650.eps', format='eps')
-
+# fig.savefig('/Users/sephon/Desktop/Research/VizioMetrics/Visualization/forpaper2015/percentile/Diagram_FilterPG_GroupByEF_FPP_expectation_1997-2014_filter_PLoS_One_g1980_bin56.eps', format='eps')
+print "page = 0: paper:", pg
 
 #         

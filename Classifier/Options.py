@@ -3,7 +3,9 @@
 import cPickle as pickle
 import os, errno
 import datetime
+import numpy as np
 import csv
+import arff
 
 # Class of all parameters
 class Option():
@@ -33,8 +35,8 @@ class Option():
         ## Classifiers
         self.availableClassifiers = ['SVM', 'CNN']
         self.activatedClassifiers = 'SVM'
-#         self.tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
-        self.tuned_parameters = [{'kernel': ['rbf', 'linear'], 'gamma': [1e-3], 'C': [1]},]
+        self.tuned_parameters = [{'kernel': ['rbf', 'linear', 'poly'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]},]
+#         self.tuned_parameters = [{'kernel': ['rbf', 'linear'], 'gamma': [1e-3], 'C': [1]},]
         
         ## S3 Data Read Parameter
         self.keyPath = '/Users/sephon/Desktop/Research/VizioMetrics/keys.txt'
@@ -62,7 +64,7 @@ class Option():
         
         
         ## Dictionary Parameter
-        self.Npatches = 250000;             # Number of patches
+        self.Npatches = 500000;             # Number of patches [1.0: 250000]
         self.Ncentroids = 200;              # Number of centroids
         self.rfSize = 6;                    # Receptor Field Size (i.e. Patch Size)
         self.kmeansIterations = 100         # Iterations for kmeans centroid computation
@@ -79,8 +81,10 @@ class Option():
             self.modelName = 'nClass_%d_' % len(self.classNames)
             ## Corpus Path
 #             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_sub"
+#             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/random_sampling"
             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014_sub"
 #             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124"
+#             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_random_sample"
             ## Model Saving Path
             self.modelSavingPath = "/Users/sephon/Desktop/Research/VizioMetrics/Model/Classifier"
 #             self.modelSavingPath = "/home/ec2-user/VizioMetrics/Model/Classifier"
@@ -206,3 +210,21 @@ class Common():
         if consoleOut:  
             print filename, 'were saved in', filePath, '\n'
     
+    
+    @ staticmethod
+    def saveArff(path, filename, dim, X, y):
+        
+        data = X.tolist()
+        for i, row in enumerate(data):
+            row.append(str(y[i]))
+            
+        attributes = ['centroid_%d'%(i+1) for i in range(X.shape[1])]
+        attributes.append('class_name')
+        outFilePath= os.path.join(path, filename)
+        
+        infile = open(outFilePath, 'wb')
+        arff.dump(outFilePath, data, relation="whatever", names=attributes)
+        
+        print '.arff file saved in %s'%outFilePath
+        
+        

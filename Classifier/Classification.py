@@ -971,7 +971,7 @@ if __name__ == '__main__':
     Opt = Option(isClassify = True)
 #     corpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/testCorpus"
     VCLF = VizClassifier(Opt, clf = 'SVM')
-    print VCLF.Classifier.best_estimator_
+#     print VCLF.Classifier.best_estimator_
     
 #     VCLF.classifyLocalImages()
 #     VCLF.classifyCouldImages()
@@ -984,8 +984,10 @@ if __name__ == '__main__':
 #     VCLF.getAllFormat(0, 10000000)
 #     VCLF.convertCloudImageParallel(0, 1000)
 #     VCLF.classifyCloudImagesParallelDB(query)
-    query = "select img_loc from keys_s3 WHERE img_format = 'jpg' LIMIT 1000000"
-#     VCLF.classifyCloudImagesParallelDB(query)
+#     query = "select img_loc from keys_s3 WHERE img_format = 'jpg' LIMIT 1000000"
+    query = 'SELECT img_loc from s3_keys as s3 WHERE s3.img_id NOT REGEXP "PMC[0-9]+_[a-zA-Z]+[0-9]+-[0-9]+&copy" AND (s3.img_format = "jpg" OR s3.img_format = "png") AND img_id not in ( SELECT img_id from image_full_info WHERE img_id NOT REGEXP "PMC[0-9]+_[a-zA-Z]+[0-9]+-[0-9]+&copy" AND (img_format = "jpg" OR img_format = "png"))'
+
+    VCLF.classifyCloudImagesParallelDB(query)
 #     VCLF.convertCloudImageParallelDB(query)
 #     VCLF.convertCloudImageParallelDB(query)
 #     VCLF.classifyCloudSubImagesParallelDB(query)

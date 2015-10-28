@@ -12,7 +12,7 @@ from Dictionary import *
 from Options import *
 from DataManager import *
 from Models import *
-from PIL import Image
+# from PIL import Image
 from cStringIO import StringIO
 
 import multiprocessing as mp
@@ -22,6 +22,18 @@ import multiprocessing as mp
 sys.path.append("..")
 from Dismantler.Options_Dismantler import *
 from Dismantler.Dismantler import *
+
+
+def updateImageToEffectiveArea(img, thresholds):
+    
+    heads, ends = Dismantler.getEffectiveImageArea(img, thresholds)
+    
+    if ends[1] > heads[1] and ends[0] > heads[0]:
+        new_img = img[heads[1]:ends[1], heads[0]:ends[0]]
+    else:
+        new_img = img
+        
+    return new_img
 
 def isKeyValidImageFormat(Opt, key):
     keyname =  key.name.split('.')
@@ -67,7 +79,12 @@ f = open(keyPath, 'r')
 access_key = f.readline()[0:-1]
 secret_key = f.readline()
 
-conn = S3Connection(access_key, secret_key)
+conn = boto.s3.connect_to_region(
+   region_name = 'us-west-2',
+   aws_access_key_id = access_key,
+   aws_secret_access_key = secret_key,
+   calling_format = boto.s3.connection.OrdinaryCallingFormat()
+   )
 bucket = conn.get_bucket(Opt.host)
 bucketList = bucket.list()
 #####################################
@@ -156,15 +173,15 @@ def localWorker(Opt, FD, Clf, fname, q_result, q_error):
 
 
 
-
+                                         
 #### Test s3 image
-keyname = 'pubmed/img/PMC2195757_JEM991620.f1.jpg'
+keyname = 'pubmed/img/PMC1751024_cc4967-1.jpg'
 
     
 # keyname = 'imgs/PMC3898118_onc2012600x1.tif'
 # keyname = 'imgs/PMC2358978_pone.0002093.s003.tif'
 # keyname = 'imgs/PMC1033567_medhist00152-0104.tif'
-# keyname = 'imgs/PMC1033587_medhist00151-0069&copy.jpg'
+# keyname = 'pubmed/img/PMC1033587_medhist00151-0069&copy.jpg'
 # keyname= 'tarfiles/Neurochem_Res_2009_Aug_28_34(8)_1522.tar.gz'
 # keyname = 'imgs/PMC1994591_pone.0001006.s001.tif,527743'
 key = bucket.get_key(keyname)
@@ -172,7 +189,8 @@ print key.size
 imgStringData = key.get_contents_as_string()
 # cv
 nparr = np.fromstring(imgStringData, np.uint8)
-img_np = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
+# img_np = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
+img_np = cv.imdecode(nparr, 1)
 
 
 
@@ -190,9 +208,11 @@ img_np = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
 # print key.size
 # print img_np.shape
 # print img_np.dtype
-plt.imshow(img_np, interpolation = 'bicubic')
+thresholds = {'splitThres': 0.999, 'varThres': 3, 'var2Thres': 100}
+plt.imshow(updateImageToEffectiveArea(img_np, thresholds), interpolation = 'bicubic')
+# plt.imshow(img_np, interpolation = 'bicubic')
 plt.show()
-# cv.imwrite('/Users/sephon/Desktop/Research/VizioMetrics/test_ori.tif', img_np)
+# cv.imwrite('/Users/sephon/Desktop/Research/VizioMetrics/tester/test_ori15.jpg', img_np)
 # 
 # cv.imwrite('/Users/sephon/Desktop/Research/VizioMetrics/test_ori.jpg', img_np, [cv.IMWRITE_JPEG_QUALITY, 100])
 # 

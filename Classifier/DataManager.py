@@ -14,6 +14,7 @@ from Options import *
 # CloudImageLoader
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+import boto
 # from PIL import Image
 from cStringIO import StringIO
 
@@ -35,7 +36,14 @@ class CloudImageLoader():
         access_key = f.readline()[0:-1]
         secret_key = f.readline()
         
-        conn = S3Connection(access_key, secret_key)
+#         conn = S3Connection(access_key, secret_key)
+        conn = boto.s3.connect_to_region(
+           region_name = 'us-west-2',
+           aws_access_key_id = access_key,
+           aws_secret_access_key = secret_key,
+           calling_format = boto.s3.connection.OrdinaryCallingFormat()
+           )
+        
         self.bucket = conn.get_bucket(host)
         
     def getKey(self, keyname):
@@ -74,7 +82,8 @@ class CloudImageLoader():
 #         img = np.array(img) 
         
         nparr = np.fromstring(imgStringData, np.uint8)
-        img = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
+#         img = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
+        img = cv.imdecode(nparr, 1)
         
 #         if len(img.shape) == 3:
 #             img = img[:, :, ::-1].copy() 
@@ -275,10 +284,79 @@ class ImageLoader():
         
         return newImg
     
+    ##### Duplicate Code in Dismantler #####
+    @ staticmethod
+    def updateImageToEffectiveArea(img, thresholds = {'splitThres': 0.999, 'varThres': 3, 'var2Thres': 100}):
+        heads, ends = ImageLoader.getEffectiveImageArea(img, thresholds)
+        
+        if ends[1] > heads[1] and ends[0] > heads[0]:
+            new_img = img[heads[1]:ends[1], heads[0]:ends[0]]
+        else:
+            new_img = img
+            
+        return new_img
+
+    @ staticmethod
+    def indices(a, func):
+        return [i for (i, val) in enumerate(a) if func(val)]
+    
+    @ staticmethod
+    def getBlankLine(img, orientation, thresholds): 
+        arraySum = np.sum(img, axis = orientation)
+        arraySum_nor = arraySum/float(np.max(arraySum))
+        arrayVar = np.var(img, axis = orientation) 
+
+        blank_line = ImageLoader.indices(zip(arrayVar, arraySum_nor), lambda x: x[0] < thresholds['varThres'] or (x[0] < thresholds['var2Thres'] and x[1] > thresholds['splitThres']))
+        return blank_line
+    
+    @ staticmethod 
+    def getEffectiveImageArea(img, thresholds):
+        
+        img_dim = img.shape
+        if len(img.shape) == 3:
+            img_mono = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        else:
+            img_mono = img
+        heads = []
+        ends = []
+        
+        for orientation in range(0, 2):
+            blank_line = ImageLoader.getBlankLine(img_mono, orientation, thresholds)
+            if len(blank_line) > 0:
+                if blank_line[0] == 0:
+                    head = 0
+                    while (head + 1) < len(blank_line):
+                        if blank_line[head + 1] - blank_line[head] > 1:
+                            break
+                        head += 1     
+                    heads.append(blank_line[head])
+                else:
+                    heads.append(0)
+                
+                if blank_line[-1] == img_dim[(orientation + 1) % 2]-1:
+                    end = len(blank_line) - 1
+                    while end - 1 >= 0:
+                        if blank_line[end] - blank_line[end - 1] > 1:
+                            break
+                        end -= 1
+                    ends.append(blank_line[end])
+                else:
+                    ends.append(img_dim[(orientation + 1) % 2])
+            else:
+                heads.append(0)
+                ends.append(img_dim[(orientation + 1) % 2])
+                
+        return heads, ends 
+    ##### Duplicate Code in Dismantler #####
+    
+    
+    
     @ staticmethod
     def preImageProcessing(img, finalDim, preserveAR = True):
         if len(img.shape) == 3:
             img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+            
+        img = ImageLoader.updateImageToEffectiveArea(img)
         imDim = img.shape 
         
         if preserveAR:
@@ -362,13 +440,13 @@ class ImageLoader():
         num = 0;
         for dirPath, dirNames, fileNames in os.walk(path):   
             for f in fileNames:
-                extension = f.split('.')[1].lower()
+                extension = f.split('.')[-1].lower()
                 if extension in self.Opt.validImageFormat:
                     fileList.append(os.path.join(dirPath, f))
                     num += 1
                 
         return fileList
-        
+    
 if __name__ == '__main__':   
 
 

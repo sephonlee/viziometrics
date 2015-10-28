@@ -5,7 +5,24 @@ from LatestModels import *
 import itertools
 import multiprocessing as mp
 
-def listener(name, q, outPath, outFilename):
+def flattenKeyList(key_list):
+    result_list = []
+    for row in key_list:
+        result_list.append([row[0]])
+    return result_list
+
+def removeSuccessfulOperationKey(key_list, keyname):
+    key_index = key_list.index(keyname)
+    del key_list[key_index]
+    return key_list
+
+def saveBadKeyList(key_list, outPath, allKeyCsvFilename):
+    outFilePath = os.path.join(outPath, allKeyCsvFilename) + '.csv'
+    outcsv = open(outFilePath, 'ab')
+    writer = csv.writer(outcsv, dialect = 'excel')
+
+
+def listener(name, q, outPath, outFilename, key_list, allKeyCsvFilename):
     print '%s Listener set up in %s' % (name, mp.current_process().name)
     startTime = time.time()
     outFilePath = os.path.join(outPath, outFilename) + '.csv'
@@ -18,12 +35,17 @@ def listener(name, q, outPath, outFilename):
             count += 1
         # Stop
         if content == 'kill':
+            #Save bad key list
+            if key_list is not None:
+                saveBadKeyList(key_list, outPath, allKeyCsvFilename)
             costTime = time.time() - startTime
             print'%d images have been classified in %d sec. Stop Listener in %s\n' % (count - 1, costTime, mp.current_process().name)
             break
         
         for row in content:
             writer.writerow(row)
+            if key_list is not None:
+                removeSuccessfulOperationKey(key_list, row[2])
         if count % 10 == 0 and count != 0:
             print '%d images have been collected in %s.' % (count, outFilePath)
             
@@ -131,40 +153,6 @@ def worker(args):
         except:
             q_error.put(zip([key.name], [key.size]))  
     
-# def worker(args):
-#     
-#     row, q_result, q_error, q_invalid = args
-#     keyname = row[0]
-#     key = CIL.getKey(keyname)
-#     
-#     isValid, suffix = CIL.isKeyValidImageFormat(key)
-#     if isValid:
-#         process_name = mp.current_process().name
-#         print '%s (%d KB)is classified by %s' %(key.name, key.size, process_name) ####
-#         imageFormat = key.name.split('.')[-1]
-#         try:
-#             # Load Image
-#             img = CloudImageLoader.keyToValidImage(key)
-#             
-#             mask = DMTLER.getEffectiveRegionMask(img)
-#             classname, prob = CPSD.getClassAndProabability(mask)
-#             
-#             image_id = key.name.split('/')[-1]
-#             paper_id = image_id.split('_')[0][3:]
-#             
-#             is_composite = False
-#             if classname[0] == 'composite':
-#                 is_composite = True
-#     
-#             result = zip([image_id], [paper_id], [key.name], [is_composite], prob)
-#             print result
-#             q_result.put(result)
-#         except:
-#             q_error.put(zip([key.name], [key.size]))
-#             
-#     else:
-#         q_invalid.put(zip([key.name], [key.size]))
-
 
 def classifySubFigure(query):
     
@@ -188,9 +176,33 @@ def classifySubFigure(query):
     print 'Start classifying images on cloud server...'
     startTime = time.time()
 
+    # Collect keys
+    print 'Collecting keys from "%s"' % query
+    key_list = IDM.getKeynamesByQuery(query)
+    flat_key_list = flattenKeyList(key_list)
+    
+    num_keys = len(key_list)
+    
+    endTime = time.time()
+    print num_keys, 'keys were collected in ', endTime - startTime, 'sec'
+    
+    
     # Create Multiprocess Manager
     manager = mp.Manager()  
     output_id = hash(query) / 10000000000000
+    
+    
+    # All Key Out
+    header = ['img_loc']
+    csvSavingPath = Class_Classifier_Opt.resultPath
+    csvFilename = 'composite_Allkey_parallel_%s' % output_id
+    Common.saveCSV(csvSavingPath, csvFilename, content = flat_key_list, header = header, mode = 'wb', consoleOut = False)
+    
+    # BadKey Key Out
+    header = ['img_loc']
+    csvSavingPath = Class_Classifier_Opt.resultPath
+    allKeyCsvFilename = 'composite_baBkey_parallel_%s' % output_id
+    Common.saveCSV(csvSavingPath, allKeyCsvFilename, header = header, mode = 'wb', consoleOut = False)
     
     # Result Out
     header = ['img_id', 'pmcid', 'img_loc', 'segmentation', 'class_name', 'class_probability', 'img_format', 'img_height', 'img_width', 'key_size']    
@@ -198,7 +210,7 @@ def classifySubFigure(query):
     csvFilename = 'composite_result_parallel_%s' % output_id
     DataFileTool.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
     q_result = manager.Queue() 
-    p_result = mp.Process(target = listener, args=('Result', q_result, csvSavingPath, csvFilename))
+    p_result = mp.Process(target = listener, args=('Result', q_result, csvSavingPath, csvFilename, key_list, allKeyCsvFilename))
     p_result.start()
              
     # Error Out
@@ -207,7 +219,7 @@ def classifySubFigure(query):
     csvFilename = 'composite_error_parallel_%s' % output_id
     Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
     q_error = manager.Queue() 
-    p_error = mp.Process(target = listener, args=('Error', q_error, csvSavingPath, csvFilename))
+    p_error = mp.Process(target = listener, args=('Error', q_error, csvSavingPath, csvFilename, None, None))
     p_error.start()
      
     # Invalid Out
@@ -216,22 +228,13 @@ def classifySubFigure(query):
     csvFilename = 'composite_invalid_parallel_%s' % output_id
     Common.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
     q_invalid = manager.Queue() 
-    p_invalid = mp.Process(target = listener, args=('Result', q_invalid, csvSavingPath, csvFilename))
+    p_invalid = mp.Process(target = listener, args=('Result', q_invalid, csvSavingPath, csvFilename, None, None))
     p_invalid.start()
+    
+    
                  
     pool = mp.Pool(processes = mp.cpu_count() + 2)
     print 'CPU count: %d' % mp.cpu_count()
-    
-    # Collect keys
-    print 'Collecting keys from "%s"' % query
-    key_list = IDM.getKeynamesByQuery(query)
-    num_keys = len(key_list)
-    
-    print key_list
-    
-    
-    endTime = time.time()
-    print num_keys, 'keys were collected in ', endTime - startTime, 'sec'
     
     # Pooling
     print 'Start Pooling...'

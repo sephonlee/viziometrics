@@ -18,35 +18,7 @@ import numpy as np
 
 from Options_Dismantler import *
 
-class SubImage(TreeNode):
-        
-    start = None
-    end = None
-    size = None
-    blank_area = None
-    aspect_ratio = None
-    dim = None
-    id = None
-    level = None
-    
-    def __init__(self, id):
-        super(SubImage, self)
-        self.id = id
-#         self.name = id
-        
-    def extend_id(self, value):
-        self.id = self.id + str(value) + "_"
-        
-    def add_level(self):
-        self.level = self.level + 1
-        
-    def __str__(self):
-        msg = "subimg id:" + str(self.id) + "\t level:" + str(self.level) + "\n" + \
-                "start:" + str(self.start) + "\t end:" + str(self.end) + "\n" + \
-                "size:" + str(self.size) + "\t aspect ratio:" +  str(self.aspect_ratio) + "\n" + \
-                 "blank area:" + str(self.blank_area) + "\t dimension:" + str(self.dim)
-        return msg
-    
+
 
 class CompositeImageDetector():
     Opt = None
@@ -573,17 +545,25 @@ class Dismantler:
         first_horizontal = self.merge(img, first_horizontal)
     
         final_result = self.select(img, first_vertical, first_horizontal)
+        
         return final_result
     
     def merge(self, img, root):
 #         print 'show split result' # DEBUG
 #         self.showSegmentation(img, root, show = True) # DEBUG
-        root = self.HeirachicalMerge(img, root)
-#         print 'show hMerge result' #DEBUG
-#         self.showSegmentation(img, root, show = True) # DEBUG
-        node_list = self.TMerge(img, root)
-#         print 'show TMerge result' # DEBUG
-#         self.showSegmentationByList(img, node_list, show = True) # DEBUG
+        
+        # Check no fragment after splitting.
+        # If no fragment, do not merge.
+            
+        if len(root.get_children()) == 1:
+            node_list = root
+        else:
+            root = self.HeirachicalMerge(img, root)
+#             print 'show hMerge result' #DEBUG
+#             self.showSegmentation(img, root, show = True) # DEBUG
+            node_list = self.TMerge(img, root)
+#             print 'show TMerge result' # DEBUG
+#             self.showSegmentationByList(img, node_list, show = True) # DEBUG
         return node_list
     
     def HeirachicalMerge(self, img, root):
@@ -729,16 +709,40 @@ class Dismantler:
         # Get distance matrix
         dist_matrix = self.getTMergingDistMatrix(img, node_list, self.Opt.thresholds)
         removed_indice = []
+        
+#         print node_list
         # Get merging target 
+        
+#         self.showSegmentationByList(img, node_list, show = True) #DEBUG
+        
         for i, node in enumerate(node_list):
             target_node_index = int(np.argmin(abs(dist_matrix[i, :])))
             
             # 1. This node is auxiliary or false_standalone
             # 2. Distance != infinity
             if node.info['class'] != 'standalone' and dist_matrix[i, target_node_index] != np.inf:
+                
+                
+                
                 extend_orientation = self.getExtendOrientation(node, node_list[target_node_index])
                 target_indice = self.getOverLapNodeindice(i, target_node_index, node_list)
                 target_indice.append(target_node_index) # put self into extend list
+        
+#                 print 'show this node'
+#                 self.showSegmentationByList(img, node, show = True) # DEBUG
+                
+#                 print 'show target node'
+#                 self.showSegmentationByList(img, node_list[target_node_index], show = True) # DEBUG
+                
+#                 print 'target_indice', target_indice
+#                 targetNodeList = []
+#                 for index in target_indice:
+#                     targetNodeList.append(node_list[index])
+#                     
+#                 print 'targetNodeList', targetNodeList
+#                 print 'show involved node'
+#                 self.showSegmentationByList(img, targetNodeList, show = True) # DEBUG
+                
                 
                 for index in target_indice:
                     beneficiary_node = node_list[index]
@@ -751,15 +755,21 @@ class Dismantler:
                                                 (beneficiary_node.info['end'][1] - beneficiary_node.info['start'][1]))
                     beneficiary_node.info['dim'] = new_dim
                     beneficiary_node.info['size'] = new_dim[0] * new_dim[1]
+                    
+                    #ensure the extended nodes' targets won't be the the same nodes that have been traverse
+                    dist_matrix[index, i] = np.inf
                         
                 removed_indice.append(i)
+                
+                
+                
                 
         # Remove merged node
         for index in sorted(removed_indice, reverse=True):
             node = node_list[index]
             node.detach()
             del node_list[index]
-                   
+            
         return node_list
     
     @ staticmethod
@@ -898,20 +908,22 @@ class Dismantler:
         for i, node in enumerate(node_list):
             
             if i != this_node_index and i != to_node_index:
-                node_start_end = node.info['start'] + node.info['end']
-                contexes = [[node_start_end[0], node_start_end[1]], [node_start_end[2], node_start_end[1]], \
-                    [node_start_end[2], node_start_end[3]], [node_start_end[0], node_start_end[3]]]
-        
-                for n in range(0,4):
-                    if new_contexes[n][0] > contexes[0][0] and new_contexes[n][0] < contexes[2][0] and \
-                    new_contexes[n][1] > contexes[0][1] and new_contexes[n][1] < contexes[2][1]:
-                        overlap_node_list.append(i)
-                        break
+                
+                if Dismantler.isNeighbor(node_list[this_node_index], node):
+                    node_start_end = node.info['start'] + node.info['end']
+                    contexes = [[node_start_end[0], node_start_end[1]], [node_start_end[2], node_start_end[1]], \
+                        [node_start_end[2], node_start_end[3]], [node_start_end[0], node_start_end[3]]]
                     
-                    if contexes[n][0] > new_contexes[0][0] and contexes[n][0] < new_contexes[2][0] and \
-                    contexes[n][1] > new_contexes[0][1] and contexes[n][1] < new_contexes[2][1]:
-                        overlap_node_list.append(i)
-                        break
+                    for n in range(0,4):
+                        if new_contexes[n][0] > contexes[0][0] and new_contexes[n][0] < contexes[2][0] and \
+                        new_contexes[n][1] > contexes[0][1] and new_contexes[n][1] < contexes[2][1]:
+                            overlap_node_list.append(i)
+                            break
+                        
+                        if contexes[n][0] > new_contexes[0][0] and contexes[n][0] < new_contexes[2][0] and \
+                        contexes[n][1] > new_contexes[0][1] and contexes[n][1] < new_contexes[2][1]:
+                            overlap_node_list.append(i)
+                            break
         
         return overlap_node_list
     
@@ -932,8 +944,6 @@ class Dismantler:
         elif node_1.info['start'][0] == node_2.info['end'][0]:
             factor = 3
         elif node_1.info['end'][1] == node_2.info['start'][1]:
-#             print node_1.info['end'][1]
-#             print node_2.info['start'][1]
             factor = 2
         elif node_2.info['end'][1] == node_1.info['start'][1]:
             factor = 4
@@ -1063,7 +1073,9 @@ class Dismantler:
     @ staticmethod
     def isSiblings(node_1, node_2, show = False):
         
-
+        #if no fragment from splitting 
+#         if isinstance((node_1.info['id']), int):
+#             return False
         
         id_1 = node_1.info['id'].split('_')
         id_2 = node_2.info['id'].split('_')
@@ -1133,7 +1145,7 @@ class Dismantler:
     # 2. Newly merging sub-images does not overlap over sub-images
     def isValidMerging(node, target_node):
         
-        # Determine if the target is standalone or larger auxiliary        
+        # Determine if the target is standalone or larger auxiliary    
         if not Dismantler.isNeighbor(node, target_node):
             return False
         
@@ -1195,7 +1207,8 @@ class Dismantler:
     @ staticmethod
     def updateImageToEffectiveAreaFromNodeList(img, node_list, thresholds):
         
-        for node in node_list:
+        removed_indice = []
+        for i, node in enumerate(node_list):
             subImg = Dismantler.getSubImageFromNode(img, node)
             heads, ends = Dismantler.getEffectiveImageArea(subImg, thresholds)
         
@@ -1203,6 +1216,17 @@ class Dismantler:
             end = node.info['end'] 
             node.info['start'] = [start[0] + heads[1], start[1] + heads[0]]
             node.info['end'] = [start[0] + ends[1], start[1] + ends[0]]
+            
+            # find total blank sub-images
+            if (node.info['start'][0] >= node.info['end'][0]) or (node.info['start'][1] >= node.info['end'][1]):
+#                 Dismantler.showSegmentationByList(img, node, show = True) # DEBUG
+                removed_indice.append(i)
+            
+        # remove total blank sub-images
+        for index in sorted(removed_indice, reverse=True):
+            node = node_list[index]
+            node.detach()
+            del node_list[index]
             
         return node_list
             
@@ -1219,7 +1243,8 @@ class Dismantler:
         img_dim = img.shape
         if len(img.shape) == 3:
             img_mono = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        
+        else:
+            img_mono = img
         heads = []
         ends = []
         

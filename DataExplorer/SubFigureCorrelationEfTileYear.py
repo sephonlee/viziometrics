@@ -21,21 +21,22 @@ def getRanking(data):
         rankings[i] = ranking
     return rankings
 
+#query: figure_paper_sub_class.sql
 types = ['Table', 'Photo', 'Data Visualization', 'Diagram']
 type_colors = ['#DBDB8D', '#7F7F7F', '#C49C94', '#1F77B4']
 fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
 
 for type_index in range(6, 10):
-    finalResult = []              #01                      #07
-    group_sizes = [23, 24, 19, 21, 24, 31, 39, 68, 62, 59, 145, 255, 300, 330, 330, 218, 67, 2]
+    finalResult = []              #01                        #07
+    group_sizes = [24, 26, 21, 24, 26, 38, 50, 73, 114, 149, 188, 255, 300, 330, 330, 218, 67, 2]
     outFile = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/year_correlation_visualization.csv'
     
 #     fig = plt.figure()
 #     ax = fig.add_subplot(1,1,1)
     
-    for year_pub in range(2013, 2015):
-        file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figure_paper_sub_class_%d_filter_PLoS_One.csv' % year_pub
+    for year_pub in range(1997, 2015):
+        file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/forpaper/figure_paper_sub_class_%d_filter_PLoS_One.csv' % year_pub
     
         ###
     #     file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figure_paper_sub_class_2005_filter_PLoS_One.csv'
@@ -52,6 +53,7 @@ for type_index in range(6, 10):
         ### Line 139,140, Assign x,y variables to plot barchart
         
         data = []
+        print "year:", year_pub
         with open(file_name ,'rb') as incsv:
             reader = csv.reader(incsv, dialect='excel')
             reader.next()
@@ -154,13 +156,13 @@ for type_index in range(6, 10):
         # raw_figure = raw_figure[sort_indices][::-1]
         #########
             
-        print 'Top 10%: ', np.mean(raw_proportional_figure[0:num_valid_paper/10])
-        print 'Bottom 90%: ', np.mean(raw_proportional_figure[num_valid_paper/10:])
-        print 'Bottom 10%: ', np.mean(raw_proportional_figure[num_valid_paper * 9/10:])
-        
-        print 'Top 50%: ',  np.mean(raw_proportional_figure[0:num_valid_paper/2])
-        print 'Bottom 50%: ',  np.mean(raw_proportional_figure[num_valid_paper/2:])
-        print 'All: ', np.mean(raw_proportional_figure)
+#         print 'Top 10%: ', np.mean(raw_proportional_figure[0:num_valid_paper/10])
+#         print 'Bottom 90%: ', np.mean(raw_proportional_figure[num_valid_paper/10:])
+#         print 'Bottom 10%: ', np.mean(raw_proportional_figure[num_valid_paper * 9/10:])
+#         
+#         print 'Top 50%: ',  np.mean(raw_proportional_figure[0:num_valid_paper/2])
+#         print 'Bottom 50%: ',  np.mean(raw_proportional_figure[num_valid_paper/2:])
+#         print 'All: ', np.mean(raw_proportional_figure)
         
         
         
@@ -197,14 +199,14 @@ for type_index in range(6, 10):
             
             greaterThenMean[index] =  np.sum(raw_proportional_figure[start_index:end_index] > group_proportional_figure_mean) / float(end_index - start_index)
              
-            print 'index: %d, start: %d, end: %d, len: %d' %(index, start_index, end_index, raw_proportional_figure[start_index:end_index].shape[0])
+#             print 'index: %d, start: %d, end: %d, len: %d' %(index, start_index, end_index, raw_proportional_figure[start_index:end_index].shape[0])
             index += 1
             
             histo = np.histogram(raw_proportional_figure[start_index:end_index], bins=np.arange(0,1.1,0.1))
             histogram[i-1, :] = histo[0]
             greaterThenAvg.append(np.sum(histo[0][3:]))
         
-            print i, (i-1)%2+1, (i-1)/2+1
+#             print i, (i-1)%2+1, (i-1)/2+1
         #     ax = myFig1.add_subplot(num_bin/2, 2, i)
         #     ax.bar(histo[1][0:-1], histo[0], 0.05,
         #                  label='Men')
@@ -260,6 +262,8 @@ for type_index in range(6, 10):
         bar_width = np.array(list_paper_count)/float(num_valid_paper) * 100
         index -= bar_width
         print "barwidth", bar_width
+        
+        #########PLot each year
 #         fig = plt.figure()
 #         ax = fig.add_subplot(1,1,1)
 #          
@@ -292,12 +296,13 @@ for type_index in range(6, 10):
 #         # plt.axis([-3, 103, np.min(y_value) * 1.1, np.max(y_value) * 1.1])
 #         ax.xaxis.set_major_formatter(xticks)
 #         print 
-#         outFileName = '/Users/sephon/Desktop/viz/all_single_new/%s_FilterPG_GroupByEF_PP_%d_g%d_per%d.eps' %(types[type_index - 6], year_pub, group_size+1, int(index[1]*100))
+#         outFileName = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/forpaper2015/percentile_year/%s_FilterPG_GroupByEF_PP_%d_g%d_per%d.eps' %(types[type_index - 6], year_pub, group_size+1, int(index[1]*100))
 #         print outFileName
 #         
 #         plt.show()
 #         fig.savefig(outFileName, format='eps')
 #     
+        ############
         result = [year_pub, num_valid_paper, group_size, num_gorup, index[1], cor_coef, p_value_cor]
         finalResult.append(result)
     
@@ -341,11 +346,11 @@ ax.legend(handles, labels)
 ax.xaxis.set_ticks(range(1997,2015,1))
 fontSize = 18
 plt.ylabel('Correlation Coefficient', fontsize = fontSize)
-plt.xlabel('Year', fontsize = fontSize)
+plt.xlabel('Publishing Year', fontsize = fontSize)
 plt.tick_params(axis='both', which='major', labelsize = fontSize - 2)
 plt.xlim(1996, 2015)
 plt.title('Correlation between Figures per Page and Paper Impact in Time Series', fontsize = fontSize)
 # plt.title('Correlation between Proportion of Figure Types and Paper Impact in Time Series', fontsize = fontSize)
 plt.show()
-fig.savefig('/Users/sephon/Desktop/viz/all_single_new/All_Type_Year_FPP_FilterPG_GroupByEF_PP_1997-2014_fileter_PLoS_One.eps', format='eps')
+fig.savefig('/Users/sephon/Desktop/Research/VizioMetrics/Visualization/forpaper2015/All_Type_Year_FPP_FilterPG_GroupByEF_PP_1997-2014_fileter_PLoS_One.eps', format='eps')
                 

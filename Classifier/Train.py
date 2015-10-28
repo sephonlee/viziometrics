@@ -80,6 +80,8 @@ if __name__ == '__main__':
 #     print X.shape  // Test firelane feature
     y = allCatNames
 #                 
+    Common.saveArff(Opt_train.modelPath, 'train_data.arff', X, y)
+
     SVM_train = SVMClassifier(Opt_train, isTrain = True)
     SVM_train.trainModel(X, y)
     print 'Model has been trained'

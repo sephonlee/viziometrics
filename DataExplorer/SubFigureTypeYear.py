@@ -12,11 +12,11 @@ import matplotlib.ticker as mtick
 
 type_index = 9
 
-
+#query: year_all_single.sql
 types = ['Diagram', 'Photo', 'Data Visualization', 'Table' ]
 type_colors = ['#1F77B4', '#7F7F7F', '#C49C94', '#DBDB8D']
 
-file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/year_all_single_2.csv'
+file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/forpaper/year_all_single.csv'
 
 
 
@@ -69,15 +69,15 @@ ax[0].tick_params(axis='both', which='major', labelsize = fontSize - 2)
 ax[0].set_ylabel("|Figure| / |Page|", fontsize = fontSize - 2)
 
 ax2 = ax[0].twinx() 
-ef_plot, = ax2.plot(x, eigen_factor, '--', label= 'EigenFactor', color = '#ED1C24', linewidth=2.0)
+ef_plot, = ax2.plot(x, eigen_factor, '--', label= 'Eigenfactor', color = '#ED1C24', linewidth=2.0)
 # ax2.tick_params(axis='y', colors='#ED1C24')
 ax2.tick_params(axis='both', which='major', labelsize = fontSize - 2)
 ax2.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
 ax2.set_ylim([0, 0.0000007])
-ax2.set_ylabel("Average EigenFactor", fontsize = fontSize - 2)
+ax2.set_ylabel("Average Eigenactor", fontsize = fontSize - 2)
 
 plots.append(ef_plot)
-types.append('EigenFactor')
+types.append('Eigenfactor')
 # ax[0].grid()
 
 # plt.legend(plots, types)
@@ -104,9 +104,9 @@ ax3.set_ylim([0, 120000])
 types.append('Number of Papers')
 plots.append(np_plot)
 
-ax[1].set_xlabel("Year", fontsize = fontSize)
+ax[1].set_xlabel("Publishing Year", fontsize = fontSize)
 
-ax[0].set_title('Papers From Pubmed Central', fontsize = fontSize)
+ax[0].set_title('Global Visual Trend', fontsize = fontSize)
 plt.legend(plots, types)
 
 # plots.append(np_plot)
@@ -121,5 +121,5 @@ plt.legend(plots, types)
 plt.xlim(1990, 2015)
 plt.show()
 
-fig.savefig('/Users/sephon/Desktop/viz/all_single_new/Overview_year.eps', format='eps')
+fig.savefig('/Users/sephon/Desktop/Research/VizioMetrics/Visualization/forpaper2015/Overview_year.eps', format='eps')
             

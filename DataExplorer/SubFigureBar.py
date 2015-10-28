@@ -58,7 +58,7 @@ def findBoundary(data, index, threshold):
         
 
 ###
-file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/figure_paper_sub_class_1997-2014_filter_PLos_One.csv'
+file_name = '/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/forpaper/figure_paper_sub_class_1997-2014.csv'
 num_bin = 20
 group_size = 1999
 group_starts_ends = [[], ]
@@ -145,9 +145,13 @@ for type_index in range(6, 10):
     group_fpp_row = []
     group_eigen_factor_row = []
     
+    print list_startEnd
     for startEnd in list_startEnd:
+            
             start_index = startEnd[0]
             end_index = startEnd[1]
+            
+            print "Boundary:", "[", float(start_index)/num_valid_paper,",", float(end_index)/num_valid_paper, "]"
             
             intevals.append([start_index/float(num_valid_paper), end_index/float(num_valid_paper)])
             group_proportional_figure_row.append(np.mean(raw_proportional_figure[start_index:end_index]))
@@ -159,11 +163,11 @@ for type_index in range(6, 10):
     group_eigen_factor.append(group_eigen_factor_row)
 
     
-print types
-print intevals
-print group_proportional_figure
-print group_fpp
-print group_eigen_factor
+# print types
+# print intevals
+# print group_proportional_figure
+# print group_fpp
+# print group_eigen_factor
     
 x = np.arange(len(group_proportional_figure))
 buffer = 0.1
@@ -181,9 +185,9 @@ fontSize = 18
 ax.set_ylabel('Proportion of Figure Types', fontsize = fontSize)
 # ax.set_ylabel('|Figures| / |Page|', fontsize = fontSize)
 ax.set_xlabel('Ranked Impact by Eigenfactor', fontsize = fontSize)
-ax.set_title('Papers from Pubmed Central', fontsize = fontSize)
+ax.set_title('Papers from PubMed Central', fontsize = fontSize)
 ax.set_xticks(x + buffer + 2*width)
-ax.set_xticklabels( ('Top 5%', '5th to 26th Percentile', '26th to 43th Percentile', 'Bottom 57%') , fontsize = fontSize)
+ax.set_xticklabels( ('Top 5%', '5th to 23th Percentile', '23th to 45th Percentile', 'Bottom 55%') , fontsize = fontSize)
 plt.tick_params(axis='both', which='major', labelsize = fontSize)
 
 handles, labels = ax.get_legend_handles_labels()
@@ -191,6 +195,5 @@ ax.legend(handles, labels, fontsize = fontSize)
         
 
 plt.show()
-fig.savefig('/Users/sephon/Desktop/viz/all_single_new/4Groups_PF_FilterPG_GroupByEF_PP_fileter_PLoS_One_1997-2014_filter_PLos_One.eps', format='eps')
-
+fig.savefig('/Users/sephon/Desktop/Research/VizioMetrics/Visualization/forpaper2015/4Groups_PF_FilterPG_GroupByEF_PP_1997-2014.eps', format='eps')
         

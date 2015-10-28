@@ -2,8 +2,8 @@ import os, errno, csv
 import locale
 
 
-output = "/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/overview_category_ef_figure_sub_class_1997-2014_top44_cap.csv"
-input = "/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/overview_category_ef_figure_sub_class_1997-2014_top44.csv"
+output = "/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/forpaper/overview_category_ef_figure_sub_class_1997-2014_top49_cap.csv"
+input = "/Users/sephon/Desktop/Research/VizioMetrics/Visualization/data/forpaper/overview_category_ef_figure_sub_class_1997-2014_top49.csv"
 
 
 with open(output, 'wb') as outcsv:

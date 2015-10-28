@@ -102,7 +102,7 @@ for i, row in enumerate(data):
     raw_figure_per_page[i] = row['figure_per_page']
     raw_page[i] = row['num_pages']
     raw_figure[i] = row['num_figures']
-    
+
 print "gp", len(list_paper_count)
 print list_paper_count
 print list_change_ef_index
@@ -231,7 +231,7 @@ xticks = mtick.FormatStrFormatter(fmt)
 # plt.ylabel('Number of Paper with Diagram/Figure Greater Then Average')
 plt.ylabel('Proportion of Figures that are Classified as Diagrams')
 plt.xlabel('Ranking via Average EigenFactor')
-plt.title('Papers From Pubmed Central')
+plt.title('Papers From PubMed Central')
 plt.text(num_bin*8/10, max(y_value) * 19/20, 'correlation coefficient: %f' % cor_coef)
 plt.text(num_bin*8/10, max(y_value) * 18/20, 'p-value: %f' % p_value_cor)
 # plt.axis([-3, 103, np.min(y_value) * 1.1, np.max(y_value) * 1.1])

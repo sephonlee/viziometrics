@@ -13,7 +13,8 @@ def getModelPath(path, dirName):
     dirName = dirName + datetime.datetime.now().strftime("%Y-%m-%d")
     return Common.makeDir(path, dirName)
     
-corpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_pure/scheme'
+# corpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_pure/scheme'
+corpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/tester'
 # corpusPath = '/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/test_corpus/large_corpus'
 resultPath = '/Users/sephon/Desktop/Research/VizioMetrics/Dismantler/Result'
 resultPath = getModelPath(resultPath, '')
@@ -40,7 +41,7 @@ for dirPath, dirNames, fileNames in os.walk(corpusPath):
             # Loading Images
             img = cv.imread(filename)
             print filename
-#             node_list = Dmtler.dismantle(img)
+
             
             if len(img.shape) == 3:
                 img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
@@ -65,6 +66,11 @@ for dirPath, dirNames, fileNames in os.walk(corpusPath):
             
             final_result = Dmtler.select(img, first_vertical, first_horizontal)
             
+            nodeList = Dmtler.updateImageToEffectiveAreaFromNodeList(img, final_result, Opt_dmtler.thresholds)
+            
+            if len(final_result) > 1:
+                print final_result[0]
+            
             spendTime = time.time()
             countSelectTime += time.time() - subStartTime
             subStartTime = spendTime
@@ -77,7 +83,7 @@ for dirPath, dirNames, fileNames in os.walk(corpusPath):
             
             
 #             Dmtler.showSegmentationByList(img, node_list)
-#             Dmtler.saveSegmentationLayoutByList(img, final_result, resultPath, fname)
+            Dmtler.saveSegmentationLayoutByList(img, final_result, resultPath, fname)
             
             nImageAll += 1 
             if nImageAll % 100 == 0:

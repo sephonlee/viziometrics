@@ -65,17 +65,17 @@ if __name__ == '__main__':
     Opt_train = Option_Dismantler(isTrain = True)
     ImgLoader = ImageLoader(Opt_train)
     
-#     originalImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi"
-#     standaloneImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/standalone"
-#     auxiliaryImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/auxiliary"
+    originalImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi"
+    standaloneImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/standalone"
+    auxiliaryImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/auxiliary"
     
 #     standaloneImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/py_split/standalone"
 #     auxiliaryImagePath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Dismantler/train_corpus/py_split/auxiliary"
  
  
-    originalImagePath = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi"
-    standaloneImagePath = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/standalone"
-    auxiliaryImagePath = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/auxiliary"
+#     originalImagePath = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi"
+#     standaloneImagePath = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/standalone"
+#     auxiliaryImagePath = "/home/ec2-user/VizioMetrics/Corpus/Dismantler/train_corpus/ee_cat1_multi_subimages/auxiliary"
     
     print 'Loading images...'
     originalImageFileList = ImgLoader.getFileNamesFromPath(originalImagePath)
