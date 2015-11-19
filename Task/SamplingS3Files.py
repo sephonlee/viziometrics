@@ -28,10 +28,11 @@ except:
 # regexp for %copy 147385 / 15670
 
 classname = 'visualization'
-classnames = ['scheme', 'visualization', 'photo', 'table', 'equation']
+# classnames = ['scheme', 'visualization', 'photo', 'table', 'equation']
+classnames = ['composite']
 
 for classname in classnames:
-    filepath = os.path.join('/Users/sephon/Desktop/Research/VizioMetrics/Corpus/S3Sampling', classname)
+    filepath = os.path.join('/Users/sephon/Desktop/Research/VizioMetrics/Corpus/S3Sampling/', classname)
     
     os.mkdir(filepath)
     # Result Out
@@ -40,11 +41,15 @@ for classname in classnames:
     csvFilename = classname
     DataFileTool.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
     
-    
+    if classname == 'composite':
+        is_composite = 1
+    else:
+        is_composite = 0
+        
     num_image = 1000
     query_rand_1 = 'SELECT imgf.img_loc, imgf.class_name, imgc.is_composite' 
-    query_rand_2 = ' FROM image_full_info as imgf , image_composite as imgc WHERE imgf.img_id = imgc.img_id AND imgf.class_name = "%s" AND imgc.is_composite = 0 AND (imgf.img_format = "jpg" OR imgf.img_format = "png")' %(classname)
-#     query_rand_3 = ' AND SUBSTRING_INDEX(imgf.img_id, ".", 1) not like "%copy"'
+#     query_rand_2 = ' FROM image_full_info as imgf , image_composite as imgc WHERE imgf.img_id = imgc.img_id AND imgf.class_name = "%s" AND imgc.is_composite = 0 AND (imgf.img_format = "jpg" OR imgf.img_format = "png")' %(classname)
+    query_rand_2 = ' FROM image_full_info as imgf , image_composite as imgc WHERE imgf.img_id = imgc.img_id AND imgc.is_composite = %d AND (imgf.img_format = "jpg" OR imgf.img_format = "png")' %(is_composite)
     query_rand_3 = ' AND imgf.img_id NOT REGEXP "PMC[0-9]+_[a-zA-Z]+[0-9]+-[0-9]+&copy"'
     query_rand_4 = ' ORDER BY RAND() LIMIT %d' %num_image
     
