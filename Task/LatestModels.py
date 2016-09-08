@@ -47,3 +47,4 @@ CCLF = SVMClassifier(OPT_CCLF, clfPath = CCLF_PATH)
 CIL = CloudImageLoader(OPT_CCLF, keyPath = KEYPATH, host = HOST)
 DMTLER = Dismantler(OPT_DMTLER, auxClfPath = DMTLER_PATH)
 CPSD = CompositeImageDetector(OPT_CPSD, modelPath = CPSD_PATH)
+print CPSD.Classifier.classifier.best_estimator_

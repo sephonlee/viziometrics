@@ -28,7 +28,7 @@ class VizClassifier():
         print 'SVM Classifier ready. \n'
         
         
-    def loadCNNlassifier(self):
+    def loadCNNClassifier(self):
         print 'CNN Classifier is not implemented. \n'
         
    

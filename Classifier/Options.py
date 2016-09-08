@@ -44,12 +44,13 @@ class Option():
         self.host = 'escience.washington.edu.viziometrics'
 
         ## DB Info
-        self.DBInfoPath = '/Users/sephon/Desktop/Research/VizioMetrics/db_info.txt'
+        self.DBInfoPath = '/Users/sephon/Desktop/Research/VizioMetrics/Database_Information/support_db_info.txt'
 #         self.DBInfoPath = '/home/ec2-user/VizioMetrics/db_info.txt'
 
         ## Data Read Parameter
         self.finalDim = [128, 128, 1]    # Final image dimensions
-        self.preserveAspectRatio = True
+        self.preserveAspectRatio = True  # Fix image aspect ratio
+        self.enlargeTinyImage = False    # Whether enlarge small image or not
 #         self.Ntrain = 1                  #/ Number of training images per category
 #         self.Ntest = 1                   #/ Number of test images per category
         self.validImageFormat = ['jpg', 'tif', 'bmp', 'png', 'tiff']    # Valid image formats
@@ -82,7 +83,7 @@ class Option():
             ## Corpus Path
 #             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_sub"
 #             self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/random_sampling"
-            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat014_sub"
+            self.trainCorpusPath = "/Users/sephon/Desktop/Research/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124_jpg_only"
 #             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_ee_cat0124"
 #             self.trainCorpusPath = "/home/ec2-user/VizioMetrics/Corpus/Classifier/VizSet_pm_random_sample"
             ## Model Saving Path
@@ -183,7 +184,7 @@ class Common():
     @staticmethod
     def getFileNameAndSuffix(filePath):
         filename = filePath.split('/')[-1]
-        suffix = filename.split('.')[1]
+        suffix = filename.split('.')[-1]
         return filename, suffix
     
         # File format: paper_id_image_id.{png, jpg,....}
@@ -212,7 +213,7 @@ class Common():
     
     
     @ staticmethod
-    def saveArff(path, filename, dim, X, y):
+    def saveArff(path, filename, X, y):
         
         data = X.tolist()
         for i, row in enumerate(data):

@@ -9,120 +9,15 @@ def read_float_with_comma(num):
  
  
 ### Composite_result 
-# csv_path = '/Users/sephon/Desktop/Research/VizioMetrics/cloud_result/new_dismantle_result_0720/'
-# resultCSVList = []
-# errorCSVList = []
-# invalidCSVList = []
-#    
-# for dirPath, dirNames, fileNames in os.walk(os.path.join(csv_path, 'source_files')):   
-#             for f in fileNames:
-#                 suffix = f.split('.')[1]
-#                 if suffix == 'csv':
-#                     type = f.split('_')[1]
-#                     if type == 'result':
-#                         resultCSVList.append(os.path.join(dirPath, f))
-#                     elif type == 'error':
-#                         errorCSVList.append(os.path.join(dirPath, f))
-#                     elif type == 'invalid':
-#                         invalidCSVList.append(os.path.join(dirPath, f))
-#                            
-# print resultCSVList
-# print errorCSVList
-# print invalidCSVList
-#   
-# finalClassFile = os.path.join(csv_path, 'subFigure.csv')
-# finalClassFile_2 = os.path.join(csv_path, 'subFigureComposite.csv')
-# finalErrorFile = os.path.join(csv_path, 'subFigureError.csv')
-# finalInvalidFile = os.path.join(csv_path, 'subFigureInvalid.csv')
-# count_classFile = 0
-# count_errorFile = 0
-# count_invalidFile = 0
-# # a = "6.52353753563e-7"
-# # print float(a)
-#    
-# with open(finalClassFile, 'wb') as outcsv:
-#     writer = csv.writer(outcsv, dialect='excel')
-# #     header = ['image_id', 'image_location', 'class_name', 'paper_id', 'probability', 'format', 'image_height', 'image_width', 'file_size']
-#     header = ['img_id', 'pmcid', 'img_loc', 'segmentation', 'class_name', 'class_probability', 'img_format', 'img_height', 'img_width', 'file_size']
-#     writer.writerow(header)
-#     for f in resultCSVList:
-#         print 'converting %s...' %f
-#         with open(f ,'rb') as incsv:
-#             reader = csv.reader(incsv, dialect='excel')
-#             reader.next()
-#             for row in reader:
-#                 writer.writerow(row)
-#   
-#   
-# with open(finalClassFile_2, 'wb') as outcsv:
-#     writer = csv.writer(outcsv, dialect='excel')
-# #     header = ['image_id', 'image_location', 'class_name', 'paper_id', 'probability', 'format', 'image_height', 'image_width', 'file_size']
-#     header = ['img_id', 'paper_id', 'img_loc', 'is_composite', 'probability']
-#     writer.writerow(header)
-#     for f in resultCSVList:
-#         print 'converting %s...' %f
-#         with open(f ,'rb') as incsv:
-#             reader = csv.reader(incsv, dialect='excel')
-#             reader.next()
-#             for row in reader:
-#                   
-#                 img_id = row[0]
-#                 pmcid = row[1]
-#                 img_loc = row[2]
-#                 probability = row[4]
-#                 is_composite = 2
-#                 probability = '[ 1 0 ]'
-#                 newRow = [img_id, pmcid, img_loc, is_composite, probability]
-#                 writer.writerow(newRow)
-#                    
-#            
-# with open(finalErrorFile, 'wb') as outcsv:
-#     writer = csv.writer(outcsv, dialect='excel')
-#     header = ['img_id', 'img_loc', 'file_size']
-#     writer.writerow(header)
-#     for f in errorCSVList:
-#         print 'converting %s...' %f
-#         with open(f ,'rb') as incsv:
-#             reader = csv.reader(incsv, dialect='excel')
-#             reader.next()
-#             for row in reader:
-#                 fname = row[0]
-#                 image_id = fname.split('/')[-1]
-#                 row.insert(0, image_id)
-#                 writer.writerow(row)
-#                   
-# with open(finalInvalidFile, 'wb') as outcsv:
-#     writer = csv.writer(outcsv, dialect='excel')
-#     header = ['img_id', 'img_loc', 'file_size']
-#     writer.writerow(header)
-#     for f in invalidCSVList:
-#         print 'converting %s...' %f
-#         with open(f ,'rb') as incsv:
-#             reader = csv.reader(incsv, dialect='excel')
-#             reader.next()
-#             for row in reader:
-#                 fname = row[0]
-#                 image_id = fname.split('/')[-1]
-#                 row.insert(0, image_id)
-#                 writer.writerow(row)
-                  
-                
-                
- 
- 
- 
-### Composite_result 
-csv_path = '/Users/sephon/Desktop/Research/VizioMetrics/cloud_result/'
+csv_path = '/Users/sephon/Desktop/Research/VizioMetrics/cloud_result/new_dismantle_result/'
 resultCSVList = []
 errorCSVList = []
 invalidCSVList = []
     
-for dirPath, dirNames, fileNames in os.walk(os.path.join(csv_path, 'composite_result/source_files')):   
+for dirPath, dirNames, fileNames in os.walk(os.path.join(csv_path, 'source_files')):   
             for f in fileNames:
                 suffix = f.split('.')[1]
                 if suffix == 'csv':
-#                     print f.split('_')
-                    print f
                     type = f.split('_')[1]
                     if type == 'result':
                         resultCSVList.append(os.path.join(dirPath, f))
@@ -131,21 +26,35 @@ for dirPath, dirNames, fileNames in os.walk(os.path.join(csv_path, 'composite_re
                     elif type == 'invalid':
                         invalidCSVList.append(os.path.join(dirPath, f))
                             
-print resultCSVList
-print errorCSVList
-print invalidCSVList
+# print resultCSVList
+# print errorCSVList
+# print invalidCSVList
    
-finalClassFile = os.path.join(csv_path, 'compositeFigure.csv')
-finalErrorFile = os.path.join(csv_path, 'compositeFigureError.csv')
-finalInvalidFile = os.path.join(csv_path, 'compositeFigureInvalid.csv')
+finalClassFile = os.path.join(csv_path, 'subFigure.csv')
+finalClassFile_2 = os.path.join(csv_path, 'subFigureComposite.csv')
+finalErrorFile = os.path.join(csv_path, 'subFigureError.csv')
+finalInvalidFile = os.path.join(csv_path, 'subFigureInvalid.csv')
 count_classFile = 0
 count_errorFile = 0
 count_invalidFile = 0
 # a = "6.52353753563e-7"
 # print float(a)
     
-     
 with open(finalClassFile, 'wb') as outcsv:
+    writer = csv.writer(outcsv, dialect='excel')
+#     header = ['image_id', 'image_location', 'class_name', 'paper_id', 'probability', 'format', 'image_height', 'image_width', 'file_size']
+    header = ['img_id', 'pmcid', 'img_loc', 'segmentation', 'class_name', 'class_probability', 'img_format', 'img_height', 'img_width', 'file_size']
+    writer.writerow(header)
+    for f in resultCSVList:
+        print 'converting %s...' %f
+        with open(f ,'rb') as incsv:
+            reader = csv.reader(incsv, dialect='excel')
+            reader.next()
+            for row in reader:
+                writer.writerow(row)
+   
+   
+with open(finalClassFile_2, 'wb') as outcsv:
     writer = csv.writer(outcsv, dialect='excel')
 #     header = ['image_id', 'image_location', 'class_name', 'paper_id', 'probability', 'format', 'image_height', 'image_width', 'file_size']
     header = ['img_id', 'paper_id', 'img_loc', 'is_composite', 'probability']
@@ -156,22 +65,20 @@ with open(finalClassFile, 'wb') as outcsv:
             reader = csv.reader(incsv, dialect='excel')
             reader.next()
             for row in reader:
+                   
                 img_id = row[0]
-                paper_id = row[1]
+                pmcid = row[1]
                 img_loc = row[2]
                 probability = row[4]
-                if row[3] == 'True':
-                    is_composite = 1
-                else:
-                    is_composite = 0
-                   
-                newRow = [img_id, paper_id, img_loc, is_composite, probability]
+                is_composite = 2
+                probability = '[ 1 0 ]'
+                newRow = [img_id, pmcid, img_loc, is_composite, probability]
                 writer.writerow(newRow)
                     
             
 with open(finalErrorFile, 'wb') as outcsv:
     writer = csv.writer(outcsv, dialect='excel')
-    header = ['image_id', 'image_location', 'file_size']
+    header = ['img_id', 'img_loc', 'file_size']
     writer.writerow(header)
     for f in errorCSVList:
         print 'converting %s...' %f
@@ -180,13 +87,13 @@ with open(finalErrorFile, 'wb') as outcsv:
             reader.next()
             for row in reader:
                 fname = row[0]
-                image_id = fname.split('/')[2]
+                image_id = fname.split('/')[-1]
                 row.insert(0, image_id)
                 writer.writerow(row)
                    
 with open(finalInvalidFile, 'wb') as outcsv:
     writer = csv.writer(outcsv, dialect='excel')
-    header = ['image_id', 'image_location', 'file_size']
+    header = ['img_id', 'img_loc', 'file_size']
     writer.writerow(header)
     for f in invalidCSVList:
         print 'converting %s...' %f
@@ -195,10 +102,103 @@ with open(finalInvalidFile, 'wb') as outcsv:
             reader.next()
             for row in reader:
                 fname = row[0]
-                image_id = fname.split('/')[1]
+                image_id = fname.split('/')[-1]
                 row.insert(0, image_id)
                 writer.writerow(row)
-             
+                  
+                
+                
+ 
+ 
+ 
+### Composite_result 
+# csv_path = '/Users/sephon/Desktop/Research/VizioMetrics/cloud_result/'
+# resultCSVList = []
+# errorCSVList = []
+# invalidCSVList = []
+#     
+# for dirPath, dirNames, fileNames in os.walk(os.path.join(csv_path, 'composite_result/source_files')):   
+#             for f in fileNames:
+#                 suffix = f.split('.')[1]
+#                 if suffix == 'csv':
+# #                     print f.split('_')
+#                     print f
+#                     type = f.split('_')[1]
+#                     if type == 'result':
+#                         resultCSVList.append(os.path.join(dirPath, f))
+#                     elif type == 'error':
+#                         errorCSVList.append(os.path.join(dirPath, f))
+#                     elif type == 'invalid':
+#                         invalidCSVList.append(os.path.join(dirPath, f))
+#                             
+# print resultCSVList
+# print errorCSVList
+# print invalidCSVList
+#    
+# finalClassFile = os.path.join(csv_path, 'compositeFigure.csv')
+# finalErrorFile = os.path.join(csv_path, 'compositeFigureError.csv')
+# finalInvalidFile = os.path.join(csv_path, 'compositeFigureInvalid.csv')
+# count_classFile = 0
+# count_errorFile = 0
+# count_invalidFile = 0
+# # a = "6.52353753563e-7"
+# # print float(a)
+#     
+#      
+# with open(finalClassFile, 'wb') as outcsv:
+#     writer = csv.writer(outcsv, dialect='excel')
+# #     header = ['image_id', 'image_location', 'class_name', 'paper_id', 'probability', 'format', 'image_height', 'image_width', 'file_size']
+#     header = ['img_id', 'paper_id', 'img_loc', 'is_composite', 'probability']
+#     writer.writerow(header)
+#     for f in resultCSVList:
+#         print 'converting %s...' %f
+#         with open(f ,'rb') as incsv:
+#             reader = csv.reader(incsv, dialect='excel')
+#             reader.next()
+#             for row in reader:
+#                 img_id = row[0]
+#                 paper_id = row[1]
+#                 img_loc = row[2]
+#                 probability = row[4]
+#                 if row[3] == 'True':
+#                     is_composite = 1
+#                 else:
+#                     is_composite = 0
+#                    
+#                 newRow = [img_id, paper_id, img_loc, is_composite, probability]
+#                 writer.writerow(newRow)
+#                     
+#             
+# with open(finalErrorFile, 'wb') as outcsv:
+#     writer = csv.writer(outcsv, dialect='excel')
+#     header = ['image_id', 'image_location', 'file_size']
+#     writer.writerow(header)
+#     for f in errorCSVList:
+#         print 'converting %s...' %f
+#         with open(f ,'rb') as incsv:
+#             reader = csv.reader(incsv, dialect='excel')
+#             reader.next()
+#             for row in reader:
+#                 fname = row[0]
+#                 image_id = fname.split('/')[2]
+#                 row.insert(0, image_id)
+#                 writer.writerow(row)
+#                    
+# with open(finalInvalidFile, 'wb') as outcsv:
+#     writer = csv.writer(outcsv, dialect='excel')
+#     header = ['image_id', 'image_location', 'file_size']
+#     writer.writerow(header)
+#     for f in invalidCSVList:
+#         print 'converting %s...' %f
+#         with open(f ,'rb') as incsv:
+#             reader = csv.reader(incsv, dialect='excel')
+#             reader.next()
+#             for row in reader:
+#                 fname = row[0]
+#                 image_id = fname.split('/')[1]
+#                 row.insert(0, image_id)
+#                 writer.writerow(row)
+#              
 
 
 ### Conversion result

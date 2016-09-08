@@ -1,8 +1,7 @@
 from LatestModels import *
 import csv
-import cv2 as cv
+import cv2
 from random import randint
-import time
 
 def showSegmentationByList(img, seg_list, show = True):
     
@@ -25,36 +24,88 @@ def showSegmentationByList(img, seg_list, show = True):
         plt.show()
     return plt
 
+Class_Classifier_Opt = Option(isClassify = True)
+try:
+    cImageLoader = CloudImageLoader(Class_Classifier_Opt)
+    bucketList = cImageLoader.getBucketList()
+except:
+    print 'Unable to connect s3 server'
 
-# keyname = 'pubmed/img/PMC2889767_zdb0071061950005.jpg'
-# key = CIL.getKey(keyname)
-#   
-# imgStringData = key.get_contents_as_string()
-# nparr = np.fromstring(imgStringData, np.uint8)
-# img_np = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
-#   
-# nodeList = DMTLER.dismantle(img_np)
-# segmentations = []
-#   
-# for i in range(0, len(nodeList)):
-#                       
-#     node = nodeList[i]
-#     segmentation = str(node.info['start'][0]) + ':' + \
-#                     str(node.info['start'][1]) + ':' + \
-#                     str(node.info['end'][0]) + ':' + \
-#                     str(node.info['end'][1])
-#     segmentations.append(segmentation)
-#                       
-# print segmentations
+try:
+    db_info = ImageDataManager.getDBInfoFromFile(Class_Classifier_Opt.DBInfoPath)
+    db_info = { 'host': "54.213.68.209",
+                'db_username': "poshen",
+                'db_password': "escience",
+                'db_name': "visio"}
+    IDM = ImageDataManager(connectToDB = True, db_info = db_info)
+except:
+    print "Unable to connect SQL server"
 
 
-keyname = 'pubmed/img/PMC3995170_NIHMS560014-supplement-8.jpg'
-segmentation = ['1949:0:2362:896', '0:0:455:473', '0:473:455:896', '455:0:873:475', '455:475:873:896', '873:0:1437:475', '873:475:1437:896', '1437:0:1949:473', '1437:473:1949:896']
 
-key = CIL.getKey(keyname)
-imgStringData = key.get_contents_as_string()
-# cv
-nparr = np.fromstring(imgStringData, np.uint8)
-img_np = cv.imdecode(nparr, cv.CV_LOAD_IMAGE_COLOR)
-plt = showSegmentationByList(img_np, segmentation, show = True)
-plt.show()
+
+
+# scheme 630230
+# visualization 455486
+# photo 459321
+# table 331883
+# equation 1418169
+# composite 1374721
+# regexp for %copy 147385 / 15670
+
+num_image = 1400*1.14
+classnames = ['table','equation']
+# classnames = ['composite']
+
+for classname in classnames:
+    filepath = os.path.join('/Users/sephon/Desktop/Research/VizioMetrics/Corpus/S3Sampling/sampling_sub_figures', classname)
+    
+    os.mkdir(filepath)
+    # Result Out
+    header = ['img_loc', 'class_name', 'segmentation', 'img_id']    
+    csvSavingPath = filepath
+    csvFilename = classname
+    DataFileTool.saveCSV(csvSavingPath, csvFilename, header = header, mode = 'wb', consoleOut = False)
+    
+    query_1 = 'SELECT img_loc, class_name, segmentation, img_id FROM sub_image_full_info'
+    query_2 = ' WHERE (img_format = "jpg" OR img_format = "png") AND class_name = "%s"' %classname
+    query_3 = ' AND img_id NOT REGEXP "PMC[0-9]+_[a-zA-Z]+[0-9]+-[0-9]+&copy"'
+    query_4 = ' ORDER BY RAND() LIMIT %d' %num_image
+    query_rand = query_1 + query_2 + query_3 + query_4
+    
+    print query_rand
+    key_list = IDM.getKeynamesByQuery(query_rand)
+    
+    for keyname in key_list:
+        print keyname[0]
+        key = cImageLoader.getKey(keyname[0])
+#         localPath = os.path.join(filepath, key.name.split('/')[-1])
+        localPath = os.path.join(filepath, keyname[3])
+        print localPath
+        seg = keyname[2].split(":")
+    
+        outcsv = open(os.path.join(csvSavingPath, csvFilename + '.csv'), 'ab')
+        writer = csv.writer(outcsv, dialect = 'excel')
+        writer.writerow(keyname)
+        outcsv.flush()
+        outcsv.close()
+        imgStringData = key.get_contents_as_string()
+
+        nparr = np.fromstring(imgStringData, np.uint8)
+        img_np = cv.imdecode(nparr, 1)
+        
+        segmentation = [keyname[2]]
+        
+        plt = showSegmentationByList(img_np, segmentation, show = False)
+#         plt.show()
+        plt.savefig(localPath, dpi = 300, format='png')
+        plt.clf()
+#         plt.close()
+
+               
+#         img_seg = img_np[int(seg[0]):int(seg[2]), int(seg[1]):int(seg[3])]
+#         plt.imshow(img_seg, cmap = 'gray', interpolation = 'bicubic')
+#         plt.show()
+#         cv2.imwrite(localPath, img_seg)
+#         key.get_contents_to_filename(localPath)
+        
