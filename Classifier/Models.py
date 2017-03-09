@@ -335,10 +335,15 @@ class SVMClassifier:
     
     
     def saveEvaluation(self, y_test, y_pred, path = None, mode = "wb"):
-        if path is None:
-            path = self.Opt.modelPath
+        
+        if self.Opt.isTrain:
+            if path is None:
+                path = self.Opt.modelPath
+        else:
+            if path is None:
+                path = self.Opt.svmModelPath           
             
-        if self.modelOptimized:
+        if self.modelOptimized or not self.Opt.isTrain:
             
             confusionMat = metrics.confusion_matrix(y_test, y_pred)
             confusionMat = np.asmatrix(confusionMat)
@@ -364,7 +369,11 @@ class SVMClassifier:
             
             confusionList.insert(0, head)
             
-            Common.saveCSV(path, 'model_evaluation', confusionList, mode = mode)
+            if self.Opt.isTrain:
+                filename = 'model_evaluation'
+            else:
+                filename = 'model_evaluation_test_' + datetime.datetime.now().strftime("%Y-%m-%d")
+            Common.saveCSV(path, filename, confusionList, mode = mode)
             
         else:
             print 'Model has not been trained first.'
@@ -379,7 +388,7 @@ class SVMClassifier:
             print 'Model has not been trained first.'
         
     
-    def evaluate(self, y_true, y_pred, y_proba, save = False):
+    def evaluate(self, y_true, y_pred, y_proba, save = False, path = None):
         
         accuracy = metrics.accuracy_score(y_true, y_pred)
         precision = metrics.precision_score(y_true, y_true, average=None)
@@ -388,6 +397,20 @@ class SVMClassifier:
         
         print "Accruracy:", accuracy
 #         print "(Class, precision, recall)", result
+        
+        if save:
+            if path is None:
+                path = self.Opt.svmModelPath
+                
+            print_result = [['Accuracy From %d Testing Image:'%len(y_true), accuracy]]
+            
+            if self.Opt.isTrain:
+                filename = 'model_evaluation'
+            else:
+                filename = 'model_evaluation_test_' + datetime.datetime.now().strftime("%Y-%m-%d")
+                
+            Common.saveCSV(path, filename, print_result, mode = 'ab')
+        
         print metrics.classification_report(y_true, y_pred)
         
         
