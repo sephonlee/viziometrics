@@ -130,6 +130,78 @@ class ImageLoader():
         self.loadTrainDataByQuerry()
         return
     
+    
+    def loadTrainDataFromFileList(self, trainFileLists, outPath = None, categoryFilePath = None, mode = "train"):
+
+        if mode == "train":
+            if outPath is None:
+                outPath = self.Opt.modelPath
+        elif mode == "test":
+            if outPath is None:
+                outPath = self.Opt.svmModelPath  
+        else:
+            print "Valid modes: (1)train, (2)test"
+            return [], [], [], []
+            
+        if categoryFilePath is not None:
+            labelId2CategoryName = {}
+            print "Use category name"
+            with open(categoryFilePath ,'rb') as incsv:
+                reader = csv.reader(incsv, delimiter=' ')
+                for row in reader:
+                    labelId2CategoryName[row[0]] = row[1]
+        else:
+            labelId2CategoryName = None
+                        
+        print labelId2CategoryName
+        
+        startTime =  time.time()
+        
+        allLabels = []
+        allClassNames = []
+        
+        # get categories from directory
+        
+        imageFileList = []
+        
+        for fileListName in trainFileLists:
+            filePath = trainFileLists[fileListName]
+            with open(fileListName ,'rb') as incsv:
+                reader = csv.reader(incsv, delimiter=' ')
+                for row in reader:
+                    
+                    allLabels.append(row[1])
+                    # need to transfer the label id to category name
+                    if labelId2CategoryName is not None:
+                        allClassNames.append(labelId2CategoryName[row[1]])
+                    else:
+                        allClassNames.append(row[1])
+                    
+                    imageFileList.append(os.path.join(filePath,row[0]))
+        
+        
+#         print "labelId2CategoryName", labelId2CategoryName
+#         print "imageFileList", imageFileList[0:20]
+#         print  "allLabels", allLabels[0:20]
+#         print  "allClassNames", allClassNames[0:20]
+#         
+        
+        NImages = len(allLabels)
+        print "Loading %d images..."%NImages
+        allImData, allImDims, allDimSum = self.loadImagesByList(imageFileList, self.Opt.finalDim, self.Opt.preserveAspectRatio, self.Opt.enlargeTinyImage)
+        NImages = len(allImData)
+        print "All images loaded in", time.time()-startTime, "sec"
+        
+        saveContent = zip(imageFileList, allClassNames)
+        csvFileName = mode + '_image_files_' + datetime.datetime.now().strftime("%Y-%m-%d")
+        header = ['file_path', 'class_name']
+        DataFileTool.saveCSV(outPath, csvFileName, saveContent, header)
+        
+        # output
+        return allImData, allLabels, allClassNames, [], imageFileList     
+        
+    
+    
     # Load testing image data from local classified directories
     # Directory name = class name
     def loadTestDataFromLocalClassDir(self, inPath = None, outPath = None):
